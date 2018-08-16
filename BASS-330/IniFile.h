@@ -1,37 +1,113 @@
-#ifndef __INIFILE_H__     
-#define __INIFILE_H__     
-    
-class CIniFile    
-{    
-public:    
-    CIniFile();    
-    CIniFile(LPCTSTR szFileName);    
-    virtual ~CIniFile();    
-        
-public:    
-    // Attributes        
-    void SetFileName(LPCTSTR szFileName);    
-        
-public:    
-    // Operations     
-    BOOL SetProfileInt(LPCTSTR lpszSectionName, LPCTSTR lpszKeyName, int nKeyValue);    
-    BOOL SetProfileString(LPCTSTR lpszSectionName, LPCTSTR lpszKeyName, LPCTSTR lpszKeyValue);    
-    
-    DWORD GetProfileSectionNames(CStringArray& strArray); // 返回section数量     
-    
-    int GetProfileInt(LPCTSTR lpszSectionName, LPCTSTR lpszKeyName);    
-    DWORD GetProfileString(LPCTSTR lpszSectionName, LPCTSTR lpszKeyName, CString& szKeyValue);    
-    
-    BOOL DeleteSection(LPCTSTR lpszSectionName);    
-    BOOL DeleteKey(LPCTSTR lpszSectionName, LPCTSTR lpszKeyName);    
-        
-private:    
-    CString  m_szFileName;			// .//Config.ini, 如果该文件不存在，则exe第一次试图Write时将创建该文件     
-    
-    UINT m_unMaxSection;			// 最多支持的section数(256)     
-    UINT m_unSectionNameMaxSize;	// section名称长度，这里设为32(Null-terminated)     
-    
-    void Init();    
-};    
-    
-#endif     
+#pragma once
+#include <string>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <functional>
+using namespace std;
+
+class CIniFile
+{
+public:
+	struct Record
+	{
+		string Comments;
+		char Commented;
+		string Section;
+		string Key;
+		string Value;
+	};
+
+	enum CommentChar
+	{
+		Pound = '#',
+		SemiColon = ';'
+	};
+
+	CIniFile(void);
+	virtual ~CIniFile(void);
+
+	static bool AddSection(string SectionName, string FileName);
+	static bool CommentRecord(CommentChar cc, string KeyName,string SectionName,string FileName);
+	static bool CommentSection(char CommentChar, string SectionName, string FileName);
+	static string Content(string FileName);
+	static bool Create(string FileName);
+	static bool DeleteRecord(string KeyName, string SectionName, string FileName);
+	static bool DeleteSection(string SectionName, string FileName);
+	static vector<Record> GetRecord(string KeyName, string SectionName, string FileName);
+	static vector<Record> GetSection(string SectionName, string FileName);
+	static vector<string> GetSectionNames(string FileName);
+	static string GetValue(string KeyName, string SectionName, string FileName);
+	static bool RecordExists(string KeyName, string SectionName, string FileName);
+	static bool RenameSection(string OldSectionName, string NewSectionName, string FileName);
+	static bool SectionExists(string SectionName, string FileName);
+	static bool SetRecordComments(string Comments, string KeyName, string SectionName, string FileName);
+	static bool SetSectionComments(string Comments, string SectionName, string FileName);
+	static bool SetValue(string KeyName, string Value, string SectionName, string FileName);
+	static bool Sort(string FileName, bool Descending);
+	static bool UnCommentRecord(string KeyName,string SectionName,string FileName);
+	static bool UnCommentSection(string SectionName, string FileName);
+
+private:
+	static vector<Record> GetSections(string FileName);
+	static bool Load(string FileName, vector<Record>& content);	
+	static bool Save(string FileName, vector<Record>& content);
+
+	struct RecordSectionIs : std::unary_function<Record, bool>
+	{
+		std::string section_;
+
+		RecordSectionIs(const std::string& section): section_(section){}
+
+		bool operator()( const Record& rec ) const
+		{
+			return rec.Section == section_;
+		}
+	};
+
+	struct RecordSectionKeyIs : std::unary_function<Record, bool>
+	{
+		std::string section_;
+		std::string key_;
+
+		RecordSectionKeyIs(const std::string& section, const std::string& key): section_(section),key_(key){}
+
+		bool operator()( const Record& rec ) const
+		{
+			return ((rec.Section == section_)&&(rec.Key == key_));
+		}
+	};
+
+	struct AscendingSectionSort
+	{
+		bool operator()(Record& Start, Record& End)
+		{
+			return Start.Section < End.Section;
+		}
+	};
+
+	struct DescendingSectionSort
+	{
+		bool operator()(Record& Start, Record& End)
+		{
+			return Start.Section > End.Section;
+		}
+	};
+
+	struct AscendingRecordSort
+	{
+		bool operator()(Record& Start, Record& End)
+		{
+			return Start.Key < End.Key;
+		}
+	};
+
+	struct DescendingRecordSort
+	{
+		bool operator()(Record& Start, Record& End)
+		{
+			return Start.Key > End.Key;
+		}
+	};
+};
