@@ -769,7 +769,6 @@ UINT CParamConfig7::TestDoThread(LPVOID pParam)
 		std::vector<int> AiDiValue(32, 0);
 		for(int i = 0, j = 0; i < 64; i++, j++)
 		{
-			TRACE("%02X %02X ", ComProto.PureData[i], ComProto.PureData[i+1]);
 			AiDiValue[j] += ComProto.PureData[i]; 
 			AiDiValue[j] = (AiDiValue[j] << 8);
 			AiDiValue[j] += ComProto.PureData[++i];

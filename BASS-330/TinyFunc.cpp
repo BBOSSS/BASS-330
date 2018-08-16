@@ -223,7 +223,7 @@ std::string itos(int num)
 int stoi(std::string str)
 {
 	int res = 0;
-	for(int i = 0; i < str.length(); i++)
+	for(unsigned int i = 0; i < str.length(); i++)
 	{
 		res = res*10 + (int)(str[i]-'0');
 	}

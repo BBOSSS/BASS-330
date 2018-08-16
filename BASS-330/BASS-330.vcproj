@@ -45,6 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="&quot;D:\MySQL\mysql-5.6.35\include&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -67,7 +68,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libmysql.lib"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="&quot;D:\MySQL\MSI\mysql-5.6.36-win32\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -125,6 +128,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="&quot;D:\MySQL\MSI\mysql-5.6.36-win32\include&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -147,7 +151,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libmysql.lib"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;D:\MySQL\MSI\mysql-5.6.36-win32\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -199,6 +205,10 @@
 			</File>
 			<File
 				RelativePath=".\IniFile.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MySQLInterface.cpp"
 				>
 			</File>
 			<File
@@ -285,6 +295,10 @@
 			</File>
 			<File
 				RelativePath=".\IniFile.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MySQLInterface.h"
 				>
 			</File>
 			<File

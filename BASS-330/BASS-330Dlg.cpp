@@ -189,7 +189,7 @@ void CBASS330Dlg::OnSysCommand(UINT nID, LPARAM lParam)
 	}
 }
 
-// 如果向对话框添加最小化按钮，则需要下面的代码
+//  如果向对话框添加最小化按钮，则需要下面的代码
 //  来绘制该图标。对于使用文档/视图模型的 MFC 应用程序，
 //  这将由框架自动完成。
 
@@ -265,7 +265,6 @@ INT32 CBASS330Dlg::FSerialOpen()
     }
     else
     {
-		TRACE_ERROR("COM%d already open.\n", unPortName);
 		MessageBox("此串口已打开或被占用!", "提示", MB_ICONWARNING);
 		return -1;
     }
@@ -287,7 +286,6 @@ INT32 CBASS330Dlg::FSerialClose()
 	}
 	else
 	{
-		TRACE_ERROR("no serial was opened.\n");
 		MessageBox("没有串口被打开!", "提示", MB_ICONWARNING);
 		return -1;
 	}
@@ -326,7 +324,6 @@ LONG CBASS330Dlg::FSerialRecv(WPARAM ch, LPARAM port)
 	nReadLen = RingBufferWriteMax(&m_RecvBuf);
 	if(nReadLen <= 0)
 	{
-		TRACE_ERROR("m_RecvBuf is full!\n");
 		return -1;
 	}
 	if(TRUE != RingBufferWrite((unsigned char *)&ch, 1, &m_RecvBuf))
@@ -382,7 +379,6 @@ void CBASS330Dlg::OnBnClickedButtonTx()
 		MessageBox("请先打开串口!", "提示", MB_ICONWARNING);
 		return;
 	}
-	// UINT8 SendData[64] = "test !!!\r\n";
 	CString SendText;
 	m_EdSerlSend.GetWindowText(SendText);
 
