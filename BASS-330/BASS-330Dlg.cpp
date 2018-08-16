@@ -6,6 +6,8 @@
 #include "BASS-330.h"
 #include "BASS-330Dlg.h"
 #include "ProtocolHandle.h"
+#include "IniFile.h"
+#include <vector>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -123,6 +125,13 @@ BOOL CBASS330Dlg::OnInitDialog()
 	GetWindowRect(&m_AllRect);		// 获取主区域和调试区域的大小
 	GetDlgItem(IDC_GROUP_MAIN)->GetWindowRect(&m_MainRect);
 	OnStnClickedStaticDebug();		// 设置初始区域显示
+
+	CIniFile iniFile;
+	std::vector<CIniFile::Record> contents;
+	if( !iniFile.Load("BASS330.ini", contents) )
+	{
+		iniFile.Create("BASS330.ini");
+	}
 
 	// 串口COM口选择初始化 
     FInitSerial();

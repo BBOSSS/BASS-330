@@ -5,6 +5,8 @@
 #include "BASS-330.h"
 #include "ParamConfig6.h"
 #include "BASS-330Dlg.h"
+#include "IniFile.h"
+#include <vector>
 
 // CParamConfig6 对话框
 
@@ -47,6 +49,24 @@ BOOL CParamConfig6::OnInitDialog()
 	// 初始化子窗口全局指针6
 	pSubDlg6 = this;
 
+	// ini配置文件
+	CIniFile iniFile;
+	std::vector<CIniFile::Record> records;
+	records = iniFile.GetSection("AiDiCfg", "BASS330.ini");
+	if( !records.empty() )
+	{
+		CString temp(records[0].Value.c_str());
+		( ( CEdit *)GetDlgItem( IDC_EDIT3_1 ) )->SetWindowText( temp );
+		DeviValue = ToInt( temp );
+
+		for(int i = 32, j = 0, IDC = IDC_EDIT_DB1; i > 0; i--, j++, IDC++)
+		{
+			CString temp(records[i].Value.c_str());
+			( ( CEdit *)GetDlgItem( IDC ) )->SetWindowText( temp );
+			StdValues[j] = ToInt( temp );
+		}
+	}
+
 	// AI/DI 1
 	( ( CButton *)GetDlgItem( IDC_RADIO_ALLSELECT1 ) )->SetCheck( TRUE );
 	// 全选
@@ -61,28 +81,6 @@ BOOL CParamConfig6::OnInitDialog()
 	{
 		( ( CButton *)GetDlgItem( i ) )->SetCheck( TRUE );
 	}
-
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB1 ) )->SetWindowText( "4000" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB2 ) )->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB3 ) )->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB4 ) )->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB5 ) )->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB6 ) )->SetWindowText( "2100" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB7 ) )->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB8 ) )->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB9 ) )->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB10 ))->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB11 ))->SetWindowText( "0" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB12 ))->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB13 ))->SetWindowText( "4060" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB14 ))->SetWindowText( "0" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB15 ))->SetWindowText( "0" );
-	( ( CEdit *)GetDlgItem( IDC_EDIT_DB16 ))->SetWindowText( "4060" );
-	for(int i = IDC_EDIT_DB17; i <= IDC_EDIT_DB32; i++) 
-	{
-		( ( CEdit *)GetDlgItem( i ) )->SetWindowText( "0" );
-	}
-	( ( CEdit *)GetDlgItem( IDC_EDIT3_1 ) )->SetWindowText( "4000" );
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 异常: OCX 属性页应返回 FALSE
@@ -158,8 +156,13 @@ bool CParamConfig6::AiDiTest(std::vector<int> &AiDiValue)
 }
 void CParamConfig6::OnBnClickedButton_Set()
 {
+	CIniFile iniFile;
+	if( !iniFile.SectionExists("AiDiCfg", "BASS330.ini") )
+	{
+		iniFile.AddSection("AiDiCfg", "BASS330.ini");
+	}
 	CString EditValue;
-	for(int i = 0, IDC = IDC_EDIT_DB1; IDC <= IDC_EDIT_DB32; IDC++) 
+	for(int i = 0, IDC = IDC_EDIT_DB1; IDC <= IDC_EDIT_DB32; i++, IDC++) 
 	{
 		( ( CEdit *)GetDlgItem( IDC ) )->GetWindowText( EditValue );
 		if(EditValue.IsEmpty())
@@ -167,7 +170,8 @@ void CParamConfig6::OnBnClickedButton_Set()
 			AfxMessageBox("对比值不能为空, 请输入具体数值。");
 			return;
 		}
-		StdValues[i++] = ToInt(EditValue);
+		StdValues[i] = ToInt(EditValue);
+		iniFile.SetValue("AiDi"+itos(i+1), itos(StdValues[i]), "AiDiCfg", "BASS330.ini");
 	}
 	( ( CEdit *)GetDlgItem( IDC_EDIT3_1 ) )->GetWindowText( EditValue );
 	if(EditValue.IsEmpty())
@@ -176,6 +180,7 @@ void CParamConfig6::OnBnClickedButton_Set()
 		return;
 	}
 	DeviValue = ToInt(EditValue);
+	iniFile.SetValue("Tolerance", itos(DeviValue), "AiDiCfg", "BASS330.ini");
 	MessageBox("设置偏差值和对比值成功！", "提示", MB_ICONINFORMATION);
 }
 

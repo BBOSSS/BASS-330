@@ -207,3 +207,25 @@ void HexToAscii(BYTE &byAt, BYTE &chAsciiH, BYTE &chAsciiL)
     }
     return;
 }
+
+std::string itos(int num)
+{
+	std::string res;
+	if(num == 0) return "0";
+	while(0 != num)
+	{
+		res = (char)(num%10 + '0') + res;
+		num /= 10;
+	}
+	return res;
+}
+
+int stoi(std::string str)
+{
+	int res = 0;
+	for(int i = 0; i < str.length(); i++)
+	{
+		res = res*10 + (int)(str[i]-'0');
+	}
+	return res;
+}

@@ -18,7 +18,13 @@
 
 #pragma once
 
+#include<string>
+
 CString ToString(int num);
+
+std::string itos(int num);
+
+int stoi(std::string str);
 
 int ToInt(CString cstr);
 

@@ -49,10 +49,12 @@ public:
 	static bool UnCommentRecord(string KeyName,string SectionName,string FileName);
 	static bool UnCommentSection(string SectionName, string FileName);
 
-private:
-	static vector<Record> GetSections(string FileName);
 	static bool Load(string FileName, vector<Record>& content);	
 	static bool Save(string FileName, vector<Record>& content);
+
+private:
+	static vector<Record> GetSections(string FileName);
+	
 
 	struct RecordSectionIs : std::unary_function<Record, bool>
 	{
