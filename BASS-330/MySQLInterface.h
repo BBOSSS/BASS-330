@@ -7,13 +7,16 @@
 #include <winsock.h> 
 #include "mysql.h"
 
-//#pragma comment(lib, "ws2_32.lib")  
-//#pragma comment(lib, "libmysql32.lib")
+#pragma comment(lib, "ws2_32.lib")  
 
  
-#define ERROR_QUERY_FAIL -1 
- 
- 
+#define		ERROR_QUERY_FAIL	-1
+#define		PORT				3306
+#define		SERVER				"localhost"
+#define		USER				"root"
+#define		PASSWORD			"12123"
+#define		DATABASE			"bass-330"
+
 typedef struct
 {
 	char* server;

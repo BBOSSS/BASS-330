@@ -71,6 +71,10 @@ public:
 	CComboBox m8_linkChain;
 	CComboBox m8_activeDial;
 	CComboBox m8_boundSIM;
+
+	// 从数据库加载配置参数
+	bool LoadParamConfig();	
+
 	afx_msg void OnBnClickedRadio1Yes();
 	afx_msg void OnBnClickedRadio1No();
 	afx_msg void OnBnClickedRadio2Yes();

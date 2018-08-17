@@ -5,6 +5,9 @@
 #include "BASS-330.h"
 #include "ParamConfig3.h"
 #include "BASS-330Dlg.h"
+#include "MySQLInterface.h"
+#include <vector>
+#include <string>
 
 // CParamConfig3 对话框
 
@@ -46,6 +49,7 @@ void CParamConfig3::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_COMBO15_7, m15_series2Databit);
 	DDX_Control(pDX, IDC_COMBO15_8, m15_series2Stopbit);
 	DDX_Control(pDX, IDC_COMBO15_9, m15_series2Checkbit);
+	DDX_Control(pDX, IDC_COMBO3, m_ComboBox_Param);
 }
 
 
@@ -211,6 +215,11 @@ BOOL CParamConfig3::OnInitDialog()
 	/***************** 初始化组合框18 ******************/
 	( ( CButton *)GetDlgItem(IDC_RADIO18_No ) )->SetCheck( TRUE );	// 选择不配置
 
+	if(LoadParamConfig() == false) 
+	{
+		AfxMessageBox("加载参数配置失败！");
+	}
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 异常: OCX 属性页应返回 FALSE
 }
@@ -348,4 +357,139 @@ void CParamConfig3::OnBnClickedButtonDelete()
     }
     MessageBox("删除成功！", "提示", MB_ICONWARNING);
     /*InitialParamCfgCombox();*/
+}
+
+// 从数据库加载配置参数
+bool CParamConfig3::LoadParamConfig()
+{
+	using namespace std;
+
+	MySQLInterface uMySQL;
+	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
+
+	if(uMySQL.Open() == false)
+	{
+		TRACE("MySQL Connect Faild!\r\n");
+		return false;
+	}
+	vector<vector<string>> data;
+	string strsql = "SELECT KaiShiYS, XiangJianSJ, PaiZhaoSL, GaoJingTD1, GaoJingTD2, ";
+	strsql += "KongT1, DianY1, UPS, YouJ, DianB, 231SL, KongTsl, ShangS, ZHNJKJN, ";
+	strsql += "DuanX, QueX, GuoY, QianY, SanXLX, SanXYSH, ";
+	strsql += "COM13ZHF, CK1BTL, CK1SHJW, CK1TZHW, CK1JY, CK2BTL, CK2SHJW, CK2TZHW, CK2JY, ";
+	strsql += "GaoJYS, ShiYGJTD1, ShiYGJTD2, ShiYGJTD3, ShiYGJTD4, ShiYGJTD5, ShiYGJTD6, ShiYGJTD7, ShiYGJTD8, ";
+	strsql += "EYXSJ, EYXJS, EGJYS, ";
+	strsql += "QDDZH, QDDDYSH, QDKYXQ, QDCHKSHCH ";
+	strsql += "FROM paramconfig WHERE PZMC = 'BASS330CPU测试';";
+
+	if(uMySQL.Select(strsql, data) == false)
+		return false;
+	
+	CString TempStr;
+	// 拍照设置
+	TempStr = data[0][0].c_str();
+	SetDlgItemText(IDC_EDIT12_1, TempStr);  
+	TempStr = data[0][1].c_str();
+	SetDlgItemText(IDC_EDIT12_2, TempStr);  
+	TempStr = data[0][2].c_str();
+	SetDlgItemText(IDC_COMBO12_1, TempStr);  
+	TempStr = data[0][3].c_str();
+	SetDlgItemText(IDC_EDIT12_3, TempStr);  
+	TempStr = data[0][4].c_str();
+	SetDlgItemText(IDC_EDIT12_4, TempStr);  
+
+	// 智能监控
+	TempStr = data[0][5].c_str();
+	SetDlgItemText(IDC_COMBO13_1, TempStr); 
+	TempStr = data[0][6].c_str();
+	SetDlgItemText(IDC_COMBO13_2, TempStr); 
+	TempStr = data[0][7].c_str();
+	SetDlgItemText(IDC_COMBO13_3, TempStr); 
+	TempStr = data[0][8].c_str();
+	SetDlgItemText(IDC_COMBO13_4, TempStr); 
+	TempStr = data[0][9].c_str();
+	SetDlgItemText(IDC_COMBO13_5, TempStr); 
+	TempStr = data[0][10].c_str();
+	SetDlgItemText(IDC_COMBO13_6, TempStr); 
+	TempStr = data[0][11].c_str();
+	SetDlgItemText(IDC_COMBO13_7, TempStr); 
+	TempStr = data[0][12].c_str();
+	SetDlgItemText(IDC_EDIT13_1, TempStr); 
+	TempStr = data[0][13].c_str();
+	SetDlgItemText(IDC_COMBO13_8, TempStr); 
+
+	// 三相电设置
+	TempStr = data[0][14].c_str();
+	SetDlgItemText(IDC_COMBO14_1, TempStr); 
+	TempStr = data[0][15].c_str();
+	SetDlgItemText(IDC_COMBO14_2, TempStr); 
+	TempStr = data[0][16].c_str();
+	SetDlgItemText(IDC_COMBO14_3, TempStr); 
+	TempStr = data[0][17].c_str();
+	SetDlgItemText(IDC_COMBO14_4, TempStr); 
+	TempStr = data[0][18].c_str();
+	SetDlgItemText(IDC_COMBO14_5, TempStr); 
+	TempStr = data[0][19].c_str();
+	SetDlgItemText(IDC_EDIT14_1, TempStr); 
+
+	// 串口参数
+	TempStr = data[0][20].c_str();
+	SetDlgItemText(IDC_COMBO15_1, TempStr); 
+	TempStr = data[0][21].c_str();
+	SetDlgItemText(IDC_COMBO15_2, TempStr); 
+	TempStr = data[0][22].c_str();
+	SetDlgItemText(IDC_COMBO15_3, TempStr); 
+	TempStr = data[0][23].c_str();
+	SetDlgItemText(IDC_COMBO15_4, TempStr); 
+	TempStr = data[0][24].c_str();
+	SetDlgItemText(IDC_COMBO15_5, TempStr); 
+	TempStr = data[0][25].c_str();
+	SetDlgItemText(IDC_COMBO15_6, TempStr); 
+	TempStr = data[0][26].c_str();
+	SetDlgItemText(IDC_COMBO15_7, TempStr); 
+	TempStr = data[0][27].c_str();
+	SetDlgItemText(IDC_COMBO15_8, TempStr); 
+	TempStr = data[0][28].c_str();
+	SetDlgItemText(IDC_COMBO15_9, TempStr); 
+
+	// 室外告警通道
+	TempStr = data[0][29].c_str();
+	SetDlgItemText(IDC_EDIT16_1, TempStr); 
+	TempStr = data[0][30].c_str();
+	SetDlgItemText(IDC_EDIT16_2, TempStr); 
+	TempStr = data[0][31].c_str();
+	SetDlgItemText(IDC_EDIT16_3, TempStr); 
+	TempStr = data[0][32].c_str();
+	SetDlgItemText(IDC_EDIT16_4, TempStr); 
+	TempStr = data[0][33].c_str();
+	SetDlgItemText(IDC_EDIT16_5, TempStr); 
+	TempStr = data[0][34].c_str();
+	SetDlgItemText(IDC_EDIT16_6, TempStr); 
+	TempStr = data[0][35].c_str();
+	SetDlgItemText(IDC_EDIT16_7, TempStr); 
+	TempStr = data[0][36].c_str();
+	SetDlgItemText(IDC_EDIT16_8, TempStr); 
+	TempStr = data[0][37].c_str();
+	SetDlgItemText(IDC_EDIT16_9, TempStr); 
+
+	// 振动参数
+	TempStr = data[0][38].c_str();
+	SetDlgItemText(IDC_EDIT17_1, TempStr); 
+	TempStr = data[0][39].c_str();
+	SetDlgItemText(IDC_EDIT17_2, TempStr); 
+	TempStr = data[0][40].c_str();
+	SetDlgItemText(IDC_EDIT17_3, TempStr); 
+
+	// 插卡取电
+	TempStr = data[0][41].c_str();
+	SetDlgItemText(IDC_EDIT18_1, TempStr); 
+	TempStr = data[0][42].c_str();
+	SetDlgItemText(IDC_EDIT18_2, TempStr); 
+	TempStr = data[0][43].c_str();
+	SetDlgItemText(IDC_EDIT18_3, TempStr); 
+	TempStr = data[0][44].c_str();
+	SetDlgItemText(IDC_EDIT18_4, TempStr); 
+
+	uMySQL.Close();
+	return true;
 }

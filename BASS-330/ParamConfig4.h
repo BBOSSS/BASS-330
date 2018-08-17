@@ -1,6 +1,7 @@
 #pragma once
 #include "afxcmn.h"
 #include "TinyFunc.h"
+#include "afxwin.h"
 
 // CParamConfig4 ¶Ô»°¿ò
 #define  IDC_EDIT_CREATEID		3000
@@ -56,5 +57,8 @@ public:
 	afx_msg void OnNMClickListPath(NMHDR *pNMHDR, LRESULT *pResult);
 protected:
 	virtual void OnOK();
+public:
+	CComboBox m_ComboBox_Channel;
+	CComboBox m_ComboBox_List;
 };
 

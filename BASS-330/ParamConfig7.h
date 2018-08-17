@@ -32,6 +32,17 @@ public:
 
 	virtual BOOL OnInitDialog();
 
+	CComboBox m_ComboBox_Param;
+	CComboBox m_ComboBox_Channel;
+	CComboBox m_ComboBox_List;
+
+	// 初始化参数配置下拉框
+	bool InitParamComboBox();
+	// 初始化通道配置下拉框
+	bool InitChannelComboBox();
+	// 初始化名单配置下拉框
+	bool InitListComboBox();
+
 	CFont m_Font;
 	CEdit m_Edit_Time_Passwod;
 	CEdit m_Edit_AIDI;

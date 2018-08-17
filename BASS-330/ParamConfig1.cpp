@@ -5,7 +5,9 @@
 #include "BASS-330.h"
 #include "ParamConfig1.h"
 #include "BASS-330Dlg.h"
-
+#include "MySQLInterface.h"
+#include <vector>
+#include <string>
 
 // CParamConfig1 对话框
 
@@ -298,71 +300,293 @@ BOOL CParamConfig1::OnInitDialog()
 	m8_boundSIM.AddString(_T("00 - 否"));
 	m8_boundSIM.AddString(_T("01 - 是"));
 
+	if(LoadParamConfig() == false) 
+	{
+		AfxMessageBox("加载参数配置失败！");
+	}
+	
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 异常: OCX 属性页应返回 FALSE
 }
 
 void CParamConfig1::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	SCROLLINFO scrollinfo;
-    GetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);
-    int unit=3;        
+	 // TODO: 在此添加消息处理程序代码和/或调用默认值
+	 SCROLLINFO scrollinfo;
+     GetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);
+     int unit = 3;        
      switch (nSBCode)  
      {      
-     case SB_LINEUP:          //Scroll one line up
-         scrollinfo.nPos -= 1;  
-         if (scrollinfo.nPos < scrollinfo.nMin)
-         {  
-             scrollinfo.nPos = scrollinfo.nMin;  
-             break;  
-         }  
-         SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);  
-         ScrollWindow(0, unit); 
-         break;  
-     case SB_LINEDOWN:           // Scroll one line down
-         scrollinfo.nPos += 1;	 // 此处一定要注意加上滑块的长度，再作判断
-         if ((UINT)scrollinfo.nPos + scrollinfo.nPage > (UINT)scrollinfo.nMax)  
-         {  
-             scrollinfo.nPos = scrollinfo.nMax;  
-             break;  
-         }  
-         SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);  
-         ScrollWindow(0, -unit);  
-         break;  
-     case SB_PAGEUP:            // Scroll one page up.
-         scrollinfo.nPos -= 5;  
-         if (scrollinfo.nPos <= scrollinfo.nMin)
-         {  
-             scrollinfo.nPos = scrollinfo.nMin;  
-             break;  
-         }  
-         SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);  
-         ScrollWindow(0, unit * 5);  
-         break;  
-     case SB_PAGEDOWN:			// Scroll one page down        
-         scrollinfo.nPos += 5;  // 此处一定要注意加上滑块的长度，再作判断
-         if ((UINT)scrollinfo.nPos + scrollinfo.nPage >= (UINT)scrollinfo.nMax)  
-         {  
-             scrollinfo.nPos = scrollinfo.nMax;  
-             break;  
-         }  
-         SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);  
-         ScrollWindow(0, -unit * 5);  
-         break;  
-     case SB_ENDSCROLL:      //End scroll     
-         break;  
-     case SB_THUMBPOSITION:  //Scroll to the absolute position. The current position is provided in nPos
-         break;  
-     case SB_THUMBTRACK:                  //Drag scroll box to specified position. The current position is provided in nPos
-         ScrollWindow(0, (scrollinfo.nPos-nPos) * unit);  
-         scrollinfo.nPos = nPos;  
-         SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);
-         break;  
+		 case SB_LINEUP:          //Scroll one line up
+			 scrollinfo.nPos -= 1;  
+			 if (scrollinfo.nPos < scrollinfo.nMin)
+			 {  
+				 scrollinfo.nPos = scrollinfo.nMin;  
+				 break;  
+			 }  
+			 SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);  
+			 ScrollWindow(0, unit); 
+			 break;  
+
+		 case SB_LINEDOWN:           // Scroll one line down
+			 scrollinfo.nPos += 1;	 // 此处一定要注意加上滑块的长度，再作判断
+			 if ((UINT)scrollinfo.nPos + scrollinfo.nPage > (UINT)scrollinfo.nMax)  
+			 {  
+				 scrollinfo.nPos = scrollinfo.nMax;  
+				 break;  
+			 }  
+			 SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);  
+			 ScrollWindow(0, -unit);  
+			 break;  
+
+		 case SB_PAGEUP:            // Scroll one page up.
+			 scrollinfo.nPos -= 5;  
+			 if (scrollinfo.nPos <= scrollinfo.nMin)
+			 {  
+				 scrollinfo.nPos = scrollinfo.nMin;  
+				 break;  
+			 }  
+			 SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);  
+			 ScrollWindow(0, unit * 5);  
+			 break; 
+
+		 case SB_PAGEDOWN:			// Scroll one page down        
+			 scrollinfo.nPos += 5;  // 此处一定要注意加上滑块的长度，再作判断
+			 if ((UINT)scrollinfo.nPos + scrollinfo.nPage >= (UINT)scrollinfo.nMax)  
+			 {  
+				 scrollinfo.nPos = scrollinfo.nMax;  
+				 break;  
+			 }  
+			 SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);  
+			 ScrollWindow(0, -unit * 5);  
+			 break; 
+
+		 case SB_ENDSCROLL:      //End scroll     
+			 break;  
+
+		 case SB_THUMBPOSITION:  //Scroll to the absolute position. The current position is provided in nPos
+			 break;
+
+		 case SB_THUMBTRACK:                  //Drag scroll box to specified position. The current position is provided in nPos
+			 ScrollWindow(0, (scrollinfo.nPos-nPos) * unit);  
+			 scrollinfo.nPos = nPos;  
+			 SetScrollInfo(SB_VERT, &scrollinfo, SIF_ALL);
+			 break;  
      }
 
-	CDialog::OnVScroll(nSBCode, nPos, pScrollBar);
+	 CDialog::OnVScroll(nSBCode, nPos, pScrollBar);
 }
+
+// 从数据库加载配置参数
+bool CParamConfig1::LoadParamConfig()
+{
+	using namespace std;
+
+	MySQLInterface uMySQL;
+	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
+
+	if(uMySQL.Open() == false)
+	{
+		TRACE("MySQL Connect Faild!\r\n");
+		return false;
+	}
+	vector<vector<string>> data;
+	string strsql = "SELECT DiZhi, XTMiMa, MJMiMa, CXMiMa, LaBa, PingBao, AnJianYin, KH2M5, ";
+	strsql += "KongZhiCK, SWTD, YFWTD, EFWTD, KZMS, SXWD, XXWD, LHSJ, ";
+	strsql += "CJMM, ";
+	strsql += "SLX, MCK, MSSL, DKTSL, YDYSK, EDYSK, MJSG, ";
+	strsql += "MJLX, PBSJ, PBTS, MDGZFS, SFFS, PBMS, Lk, KH, KaLeiX, ZCM, MiMa, QuHao, ZhanHao, ";
+	strsql += "QYJN, FJQKWD, FJQD, FJQD, KTSL, JCSJ, KTLX, ZRWD, GRKQ, RWWC, KTJG, FMTD, FDTD, ZRWW, FJJG, FJSWWD, FJSX3, FJDY3, SCTD3, SJSS3, FJLX3, JGSJ, YSSJ, ";
+	strsql += "GJY, SFSS, DQYS, JDFW, MJYS, GJLX, YouXSJ, GaoJCS, PingBSJ,     GJQR, GJSFBC, ";
+	strsql += "LianLu2M, BoHao, DHCD, DianHuaSheZhi, JKCD, JianKongSheZhi, IPDKHao, IPDiZhi, JKXTJG7, SIMKBD, SIM, SIMWS ";
+	strsql += "FROM paramconfig WHERE PZMC = 'BASS330CPU测试';";
+
+	if(uMySQL.Select(strsql, data) == false)
+		return false;
+	
+	CString TempStr;
+	// 机器参数
+	TempStr = data[0][0].c_str();
+	SetDlgItemText(IDC_EDIT1_1, TempStr);
+	TempStr = data[0][1].c_str();
+	SetDlgItemText(IDC_EDIT1_2, TempStr);
+	TempStr = data[0][2].c_str();
+	SetDlgItemText(IDC_EDIT1_3, TempStr);
+	TempStr = data[0][3].c_str();
+	SetDlgItemText(IDC_EDIT1_4, TempStr);
+	TempStr = data[0][4].c_str();
+	SetDlgItemText(IDC_COMBO1_1, TempStr);
+	TempStr = data[0][5].c_str();
+	SetDlgItemText(IDC_COMBO1_2, TempStr);
+	TempStr = data[0][6].c_str();
+	SetDlgItemText(IDC_COMBO1_3, TempStr);
+	TempStr = data[0][7].c_str();
+	SetDlgItemText(IDC_COMBO1_4, TempStr);
+	// 空调设置
+	TempStr = data[0][8].c_str();
+	SetDlgItemText(IDC_COMBO2_1, TempStr);
+	TempStr = data[0][9].c_str();
+	SetDlgItemText(IDC_COMBO2_2, TempStr);
+	TempStr = data[0][10].c_str();
+	SetDlgItemText(IDC_COMBO2_3, TempStr);
+	TempStr = data[0][11].c_str();
+	SetDlgItemText(IDC_COMBO2_4, TempStr);
+	TempStr = data[0][12].c_str();
+	SetDlgItemText(IDC_COMBO2_5, TempStr);
+	TempStr = data[0][13].c_str();
+	SetDlgItemText(IDC_EDIT2_1, TempStr);
+	TempStr = data[0][14].c_str();
+	SetDlgItemText(IDC_EDIT2_2, TempStr);
+	TempStr = data[0][15].c_str();
+	SetDlgItemText(IDC_EDIT2_3, TempStr); 
+	// 超级密码
+	TempStr = data[0][16].c_str();
+	SetDlgItemText(IDC_EDIT3_1, TempStr);
+	// 开锁设置
+	TempStr = data[0][17].c_str();
+	SetDlgItemText(IDC_COMBO4_1, TempStr);
+	TempStr = data[0][18].c_str();
+	SetDlgItemText(IDC_EDIT4_1, TempStr);
+	TempStr = data[0][19].c_str();
+	SetDlgItemText(IDC_COMBO4_2, TempStr);
+	TempStr = data[0][20].c_str();
+	SetDlgItemText(IDC_COMBO4_3, TempStr);
+	TempStr = data[0][21].c_str();
+	SetDlgItemText(IDC_COMBO4_4, TempStr);
+	TempStr = data[0][22].c_str();
+	SetDlgItemText(IDC_COMBO4_5, TempStr);
+	TempStr = data[0][23].c_str();
+	SetDlgItemText(IDC_COMBO4_6, TempStr);
+	// 门禁设置
+	TempStr = data[0][24].c_str();
+	SetDlgItemText(IDC_COMBO5_1, TempStr);
+	TempStr = data[0][25].c_str();
+	SetDlgItemText(IDC_EDIT5_1, TempStr);
+	TempStr = data[0][26].c_str();
+	SetDlgItemText(IDC_EDIT5_2, TempStr);
+	TempStr = data[0][27].c_str();
+	SetDlgItemText(IDC_COMBO5_2, TempStr);
+	TempStr = data[0][28].c_str();
+	SetDlgItemText(IDC_COMBO5_3, TempStr);
+	TempStr = data[0][29].c_str();
+	SetDlgItemText(IDC_COMBO5_4, TempStr);
+	TempStr = data[0][30].c_str();
+	SetDlgItemText(IDC_COMBO5_5, TempStr);
+	TempStr = data[0][31].c_str();
+	SetDlgItemText(IDC_COMBO5_6, TempStr);
+	TempStr = data[0][32].c_str();
+	SetDlgItemText(IDC_COMBO5_7, TempStr);
+	TempStr = data[0][33].c_str();
+	SetDlgItemText(IDC_EDIT5_3, TempStr);
+	TempStr = data[0][34].c_str();
+	SetDlgItemText(IDC_EDIT5_4, TempStr);
+	TempStr = data[0][35].c_str();
+	SetDlgItemText(IDC_EDIT5_5, TempStr);
+	TempStr = data[0][36].c_str();
+	SetDlgItemText(IDC_EDIT5_6, TempStr);
+	// 风机设置
+	TempStr = data[0][37].c_str();
+	SetDlgItemText(IDC_COMBO6_1, TempStr);
+	TempStr = data[0][38].c_str();
+	SetDlgItemText(IDC_EDIT6_1, TempStr);
+	TempStr = data[0][39].c_str();
+	SetDlgItemText(IDC_EDIT6_2, TempStr);
+	TempStr = data[0][40].c_str();
+	SetDlgItemText(IDC_EDIT6_3, TempStr);
+	TempStr = data[0][41].c_str();
+	SetDlgItemText(IDC_COMBO6_2, TempStr);
+	TempStr = data[0][42].c_str();
+	SetDlgItemText(IDC_EDIT6_4, TempStr);
+	TempStr = data[0][43].c_str();
+	SetDlgItemText(IDC_COMBO6_3, TempStr);
+	TempStr = data[0][44].c_str();
+	SetDlgItemText(IDC_EDIT6_5, TempStr);
+	TempStr = data[0][45].c_str();
+	SetDlgItemText(IDC_COMBO6_4, TempStr);
+	TempStr = data[0][46].c_str();
+	SetDlgItemText(IDC_EDIT6_6, TempStr);
+	TempStr = data[0][47].c_str();
+	SetDlgItemText(IDC_EDIT6_7, TempStr);
+	TempStr = data[0][48].c_str();
+	SetDlgItemText(IDC_EDIT6_8, TempStr);
+	TempStr = data[0][49].c_str();
+	SetDlgItemText(IDC_EDIT6_9, TempStr);
+	TempStr = data[0][50].c_str();
+	SetDlgItemText(IDC_EDIT6_10, TempStr);
+	TempStr = data[0][51].c_str();
+	SetDlgItemText(IDC_EDIT6_11, TempStr);
+	TempStr = data[0][52].c_str();
+	SetDlgItemText(IDC_EDIT6_12, TempStr);
+	TempStr = data[0][53].c_str();
+	SetDlgItemText(IDC_EDIT6_13, TempStr);
+	TempStr = data[0][54].c_str();
+	SetDlgItemText(IDC_COMBO6_5, TempStr);
+	TempStr = data[0][55].c_str();
+	SetDlgItemText(IDC_COMBO6_6, TempStr);
+	TempStr = data[0][56].c_str();
+	SetDlgItemText(IDC_COMBO6_7, TempStr);
+	TempStr = data[0][57].c_str();
+	SetDlgItemText(IDC_COMBO6_8, TempStr);
+	TempStr = data[0][58].c_str();
+	SetDlgItemText(IDC_EDIT6_14, TempStr);
+	TempStr = data[0][59].c_str();
+	SetDlgItemText(IDC_EDIT6_15, TempStr);
+	// 告警参数设置
+	TempStr = data[0][60].c_str();
+	SetDlgItemText(IDC_COMBO7_1, TempStr);
+	TempStr = data[0][61].c_str();
+	SetDlgItemText(IDC_COMBO7_2, TempStr);
+	TempStr = data[0][62].c_str();
+	SetDlgItemText(IDC_EDIT7_1, TempStr);
+	TempStr = data[0][63].c_str();
+	SetDlgItemText(IDC_EDIT7_2, TempStr);
+	TempStr = data[0][64].c_str();
+	SetDlgItemText(IDC_EDIT7_3, TempStr);
+	TempStr = data[0][65].c_str();
+	SetDlgItemText(IDC_COMBO7_3, TempStr);
+	TempStr = data[0][66].c_str();
+	SetDlgItemText(IDC_EDIT7_4, TempStr);
+	TempStr = data[0][67].c_str();
+	SetDlgItemText(IDC_EDIT7_5, TempStr);
+	TempStr = data[0][68].c_str();
+	SetDlgItemText(IDC_EDIT7_6, TempStr);
+	SetDlgItemText(IDC_EDIT7_7, "0");
+	GetDlgItem(IDC_EDIT7_7)->EnableWindow(FALSE);
+	TempStr = data[0][69].c_str();
+	SetDlgItemText(IDC_COMBO7_4, TempStr);
+	TempStr = data[0][70].c_str();
+	SetDlgItemText(IDC_COMBO7_5, TempStr);
+
+	// 通信方式设置
+	TempStr = data[0][71].c_str();
+	SetDlgItemText(IDC_COMBO8_1, TempStr);
+	TempStr = data[0][72].c_str();
+	SetDlgItemText(IDC_COMBO8_2, TempStr);
+	TempStr = data[0][73].c_str();
+	SetDlgItemText(IDC_EDIT8_1, TempStr);
+	TempStr = data[0][74].c_str();
+	SetDlgItemText(IDC_EDIT8_2, TempStr);
+	TempStr = data[0][75].c_str();
+	SetDlgItemText(IDC_EDIT8_3, TempStr);
+	TempStr = data[0][76].c_str();
+	SetDlgItemText(IDC_EDIT8_4, TempStr);
+	TempStr = data[0][77].c_str();
+	SetDlgItemText(IDC_EDIT8_5, TempStr);
+	TempStr = data[0][78].c_str();
+	SetDlgItemText(IDC_EDIT8_6, TempStr);
+	TempStr = data[0][79].c_str();
+	SetDlgItemText(IDC_EDIT8_7, TempStr);
+	TempStr = data[0][80].c_str();
+	SetDlgItemText(IDC_COMBO8_3, TempStr);
+	TempStr = data[0][81].c_str();
+	SetDlgItemText(IDC_EDIT8_8, TempStr);
+	TempStr = data[0][82].c_str();
+	SetDlgItemText(IDC_EDIT8_9, TempStr);
+
+	uMySQL.Close();
+	return true;
+}
+
 // 选择配置机器参数
 void CParamConfig1::OnBnClickedRadio1Yes()
 {

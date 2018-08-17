@@ -25,6 +25,8 @@ void CParamConfig4::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST_AIDI, m_PathList);
+	DDX_Control(pDX, IDC_COMBO_PATH_1, m_ComboBox_Channel);
+	DDX_Control(pDX, IDC_COMBO_LIST_1, m_ComboBox_List);
 }
 
 

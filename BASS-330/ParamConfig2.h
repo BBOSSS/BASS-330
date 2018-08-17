@@ -34,6 +34,10 @@ public:
 	CComboBox m11_optocoupler4;
 	CComboBox m11_optocoupler5;
 	CComboBox m11_optocoupler6;
+
+	// 从数据库加载配置参数
+	bool LoadParamConfig();
+
 	afx_msg void OnBnClickedRadio9Yes();
 	afx_msg void OnBnClickedRadio9No();
 	afx_msg void OnBnClickedRadio10Yes();

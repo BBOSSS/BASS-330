@@ -50,6 +50,12 @@ public:
 	CComboBox m15_series2Databit;
 	CComboBox m15_series2Stopbit;
 	CComboBox m15_series2Checkbit;
+
+	CComboBox m_ComboBox_Param;
+
+	// 从数据库加载配置参数
+	bool LoadParamConfig();
+
 	afx_msg void OnBnClickedRadio12Yes();
 	afx_msg void OnBnClickedRadio12No();
 	afx_msg void OnBnClickedRadio13Yes();
@@ -68,4 +74,5 @@ public:
 	afx_msg void OnBnClickedButtonExport();
 	afx_msg void OnBnClickedButtonModify();
 	afx_msg void OnBnClickedButtonDelete();
+	
 };

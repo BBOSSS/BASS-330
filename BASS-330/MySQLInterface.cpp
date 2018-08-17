@@ -1,8 +1,9 @@
 #include "stdafx.h"  
 #include "MySQLInterface.h"  
  
-MySQLInterface::MySQLInterface() :
-ErrorNum(0), ErrorInfo("ok")
+MySQLInterface::MySQLInterface() 
+		: ErrorNum(0)
+		, ErrorInfo("ok")
 {
 	mysql_library_init(0, NULL, NULL);
 	mysql_init(&MysqlInstance);
@@ -60,7 +61,7 @@ bool MySQLInterface::Select(const std::string& Querystr, std::vector<std::vector
  
 	int j = 0;
 	std::string temp;
-	std::vector<std::vector<std::string> >().swap(data);
+	std::vector<std::vector<std::string> >().swap(data);	// Object.swap()清空vector对象data的capacity
 	while (NULL != line)
 	{
 		std::vector<std::string> linedata;

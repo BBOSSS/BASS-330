@@ -6,7 +6,9 @@
 #include "ParamConfig7.h"
 #include "BASS-330Dlg.h"
 #include "ProtocolHandle.h"
+#include "MySQLInterface.h"
 #include <vector>
+#include <string>
 // CParamConfig7 对话框
 
 IMPLEMENT_DYNAMIC(CParamConfig7, CDialog)
@@ -28,6 +30,9 @@ void CParamConfig7::DoDataExchange(CDataExchange* pDX)
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_EDIT_7_5, m_Edit_Time_Passwod);
 	DDX_Control(pDX, IDC_EDIT_7_2, m_Edit_AIDI);
+	DDX_Control(pDX, IDC_COMBO_7_1, m_ComboBox_Param);
+	DDX_Control(pDX, IDC_COMBO_7_2, m_ComboBox_Channel);
+	DDX_Control(pDX, IDC_COMBO_7_3, m_ComboBox_List);
 }
 
 
@@ -95,6 +100,13 @@ BOOL CParamConfig7::OnInitDialog()
 	m_Font.CreatePointFont(250, _T("微软雅黑"));
 	m_Edit_Time_Passwod.SetFont(&m_Font);
 	m_Edit_AIDI.SetFont(&m_Font);
+	
+	// 初始化参数配置下拉框
+	InitParamComboBox();
+	// 初始化通道配置下拉框
+	InitChannelComboBox();
+	// 初始化名单配置下拉框
+	InitListComboBox();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 异常: OCX 属性页应返回 FALSE
@@ -811,4 +823,91 @@ UINT CParamConfig7::TestDoThread(LPVOID pParam)
 	pSubDlg7->m_ResColor = cGREEN;
 
 	return TRUE;
+}
+
+// 初始化参数配置下拉框
+bool CParamConfig7::InitParamComboBox()
+{
+	using namespace std;
+
+	MySQLInterface uMySQL;
+	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
+
+	if(uMySQL.Open() == false)
+	{
+		TRACE("MySQL Connect Faild!\r\n");
+		return false;
+	}
+	vector<vector<string>> data;
+	string strsql = "SELECT DISTINCT PZMC FROM paramconfig";
+	uMySQL.Select(strsql, data);
+
+	for(unsigned int i = 0; i < data.size(); i++)
+	{
+		CString temp(data[i][0].c_str());
+		m_ComboBox_Param.AddString(temp);
+		(pSubDlg3->m_ComboBox_Param).AddString(temp);
+	}
+	m_ComboBox_Param.SetCurSel( 2 );
+	(pSubDlg3->m_ComboBox_Param).SetCurSel( 2 );
+	uMySQL.Close();
+	return true;
+}
+
+// 初始化通道配置下拉框
+bool CParamConfig7::InitChannelComboBox()
+{
+	using namespace std;
+
+	MySQLInterface uMySQL;
+	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
+
+	if(uMySQL.Open() == false)
+	{
+		TRACE("MySQL Connect Faild!\r\n");
+		return false;
+	}
+	vector<vector<string>> data;
+	string strsql = "SELECT DISTINCT PeiZhiMC FROM channelconfig";
+	uMySQL.Select(strsql, data);
+
+	for(unsigned int i = 0; i < data.size(); i++)
+	{
+		CString temp(data[i][0].c_str());
+		m_ComboBox_Channel.AddString(temp);
+		(pSubDlg4->m_ComboBox_Channel).AddString(temp);
+	}
+	m_ComboBox_Channel.SetCurSel( 2 );
+	(pSubDlg4->m_ComboBox_Channel).SetCurSel( 2 );
+	uMySQL.Close();
+	return true;
+}
+
+// 初始化名单配置下拉框
+bool CParamConfig7::InitListComboBox()
+{
+	using namespace std;
+
+	MySQLInterface uMySQL;
+	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
+
+	if(uMySQL.Open() == false)
+	{
+		TRACE("MySQL Connect Faild!\r\n");
+		return false;
+	}
+	vector<vector<string>> data;
+	string strsql = "SELECT DISTINCT PZMingCheng FROM listconfig";
+	uMySQL.Select(strsql, data);
+
+	for(unsigned int i = 0; i < data.size(); i++)
+	{
+		CString temp(data[i][0].c_str());
+		m_ComboBox_List.AddString(temp);
+		(pSubDlg4->m_ComboBox_List).AddString(temp);
+	}
+	m_ComboBox_List.SetCurSel( 2 );
+	(pSubDlg4->m_ComboBox_List).SetCurSel( 2 );
+	uMySQL.Close();
+	return true;
 }
