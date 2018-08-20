@@ -64,11 +64,6 @@ BOOL CParamConfig2::OnInitDialog()
 	/************* 初始化子窗口全局指针2 **************/
 	pSubDlg2 = this;
 
-	/***************** 初始化组合框9 ******************/
-	( ( CButton *)GetDlgItem(IDC_RADIO9_No ) )->SetCheck( TRUE );	// 选择不配置
-
-	/***************** 初始化组合框10 *****************/
-	( ( CButton *)GetDlgItem(IDC_RADIO10_No ) )->SetCheck( TRUE );	// 选择不配置
 	// 联动类型1
 	m10_linkType1.AddString(_T("00-闭合"));
 	m10_linkType1.AddString(_T("01-断开"));
@@ -94,8 +89,6 @@ BOOL CParamConfig2::OnInitDialog()
 	m10_linkType6.AddString(_T("01-断开"));
 	m10_linkType6.AddString(_T("02-脉冲"));
 
-	/***************** 初始化组合框11 *****************/
-	( ( CButton *)GetDlgItem(IDC_RADIO11_No ) )->SetCheck( TRUE );	// 选择不配置
 	//继电器1 联动光耦
 	m11_optocoupler1.AddString(_T("00+00+00+00+00+00+00+00"));
 	m11_optocoupler1.AddString(_T("01+02+03+04+00+00+00+00"));
@@ -115,7 +108,7 @@ BOOL CParamConfig2::OnInitDialog()
 	m11_optocoupler6.AddString(_T("00+00+00+00+00+00+00+00"));
 	m11_optocoupler6.AddString(_T("01+02+03+04+00+00+00+00"));
 
-	if(LoadParamConfig() == false) 
+	if(LoadParamConfig("BASS330CPU测试") == false) 
 	{
 		AfxMessageBox("加载参数配置失败！");
 	}
@@ -156,7 +149,7 @@ void CParamConfig2::OnBnClickedRadio11No()
 }
 
 // 从数据库加载配置参数
-bool CParamConfig2::LoadParamConfig()
+bool CParamConfig2::LoadParamConfig(std::string pzmc)
 {
 	using namespace std;
 
@@ -172,8 +165,9 @@ bool CParamConfig2::LoadParamConfig()
 	string strsql = "SELECT XHSHJ, TDH1, YYXSJ1, YYXJS1, GJYS1, TDH2, YYXSJ2, YYXJS2, GJYS2, TDH3, YYXSJ3, YYXJS3, GJYS3, TDH4, YYXSJ4, YYXJS4, GJYS4, ";
 	strsql += "TDH5, YYXSJ5, YYXJS5, GJYS5, TDH6, YYXSJ6, YYXJS6, GJYS6, TDH7, YYXSJ7, YYXJS7, GJYS7, TDH8, YYXSJ8, YYXJS8, GJYS8, ";
 	strsql += "YLDLX, YMK, ELDLX, EMK, SanLDLX, SanMK, SiLDLX, SiMK, WLDLX, WMK, LLDLX, LMK, ";
-	strsql += "YLDGO, ELDGO, SanLDGO, SiLDGO, WLDGO, LLDGO ";
-	strsql += "FROM paramconfig WHERE PZMC = 'BASS330CPU测试';";
+	strsql += "YLDGO, ELDGO, SanLDGO, SiLDGO, WLDGO, LLDGO, ";
+	strsql += "Radio9_Yes, Radio9_No, Radio10_Yes, Radio10_No, Radio11_Yes, Radio11_No ";
+	strsql += "FROM paramconfig WHERE PZMC = '" + pzmc + "'";
 
 	if(uMySQL.Select(strsql, data) == false)
 		return false;
@@ -299,6 +293,14 @@ bool CParamConfig2::LoadParamConfig()
 	SetDlgItemText(IDC_COMBO11_5, TempStr);
 	TempStr = data[0][50].c_str();
 	SetDlgItemText(IDC_COMBO11_6, TempStr);
+
+	// 选择是否配置
+	((CButton*)GetDlgItem(IDC_RADIO9_Yes))->SetCheck(stoi(data[0][51]));
+	((CButton*)GetDlgItem(IDC_RADIO9_No ))->SetCheck(stoi(data[0][52]));
+	((CButton*)GetDlgItem(IDC_RADIO10_Yes))->SetCheck(stoi(data[0][53]));
+	((CButton*)GetDlgItem(IDC_RADIO10_No ))->SetCheck(stoi(data[0][54]));
+	((CButton*)GetDlgItem(IDC_RADIO11_Yes))->SetCheck(stoi(data[0][55]));
+	((CButton*)GetDlgItem(IDC_RADIO11_No ))->SetCheck(stoi(data[0][56]));
 
 	uMySQL.Close();
 	return true;

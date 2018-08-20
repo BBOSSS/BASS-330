@@ -300,7 +300,7 @@ BOOL CParamConfig1::OnInitDialog()
 	m8_boundSIM.AddString(_T("00 - 否"));
 	m8_boundSIM.AddString(_T("01 - 是"));
 
-	if(LoadParamConfig() == false) 
+	if(LoadParamConfig("BASS330CPU测试") == false) 
 	{
 		AfxMessageBox("加载参数配置失败！");
 	}
@@ -378,7 +378,7 @@ void CParamConfig1::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 }
 
 // 从数据库加载配置参数
-bool CParamConfig1::LoadParamConfig()
+bool CParamConfig1::LoadParamConfig(std::string pzmc)
 {
 	using namespace std;
 
@@ -398,8 +398,10 @@ bool CParamConfig1::LoadParamConfig()
 	strsql += "MJLX, PBSJ, PBTS, MDGZFS, SFFS, PBMS, Lk, KH, KaLeiX, ZCM, MiMa, QuHao, ZhanHao, ";
 	strsql += "QYJN, FJQKWD, FJQD, FJQD, KTSL, JCSJ, KTLX, ZRWD, GRKQ, RWWC, KTJG, FMTD, FDTD, ZRWW, FJJG, FJSWWD, FJSX3, FJDY3, SCTD3, SJSS3, FJLX3, JGSJ, YSSJ, ";
 	strsql += "GJY, SFSS, DQYS, JDFW, MJYS, GJLX, YouXSJ, GaoJCS, PingBSJ,     GJQR, GJSFBC, ";
-	strsql += "LianLu2M, BoHao, DHCD, DianHuaSheZhi, JKCD, JianKongSheZhi, IPDKHao, IPDiZhi, JKXTJG7, SIMKBD, SIM, SIMWS ";
-	strsql += "FROM paramconfig WHERE PZMC = 'BASS330CPU测试';";
+	strsql += "LianLu2M, BoHao, DHCD, DianHuaSheZhi, JKCD, JianKongSheZhi, IPDKHao, IPDiZhi, JKXTJG7, SIMKBD, SIM, SIMWS, ";
+	strsql += "Radio1_Yes, Radio1_No, Radio2_Yes, Radio2_No, Radio3_Yes, Radio3_No, Radio4_Yes, Radio4_No, ";
+	strsql += "Radio5_Yes, Radio5_No, Radio6_Yes, Radio6_No, Radio7_Yes, Radio7_No, Radio8_Yes, Radio8_No ";
+	strsql += "FROM paramconfig WHERE PZMC = '" + pzmc + "'";
 
 	if(uMySQL.Select(strsql, data) == false)
 		return false;
@@ -582,6 +584,24 @@ bool CParamConfig1::LoadParamConfig()
 	SetDlgItemText(IDC_EDIT8_8, TempStr);
 	TempStr = data[0][82].c_str();
 	SetDlgItemText(IDC_EDIT8_9, TempStr);
+
+	// 选择是否配置
+	((CButton*)GetDlgItem(IDC_RADIO1_Yes))->SetCheck(stoi(data[0][83]));
+	((CButton*)GetDlgItem(IDC_RADIO1_No ))->SetCheck(stoi(data[0][84]));
+	((CButton*)GetDlgItem(IDC_RADIO2_Yes))->SetCheck(stoi(data[0][85]));
+	((CButton*)GetDlgItem(IDC_RADIO2_No ))->SetCheck(stoi(data[0][86]));
+	((CButton*)GetDlgItem(IDC_RADIO3_Yes))->SetCheck(stoi(data[0][87]));
+	((CButton*)GetDlgItem(IDC_RADIO3_No ))->SetCheck(stoi(data[0][88]));
+	((CButton*)GetDlgItem(IDC_RADIO4_Yes))->SetCheck(stoi(data[0][89]));
+	((CButton*)GetDlgItem(IDC_RADIO4_No ))->SetCheck(stoi(data[0][90]));
+	((CButton*)GetDlgItem(IDC_RADIO5_Yes))->SetCheck(stoi(data[0][91]));
+	((CButton*)GetDlgItem(IDC_RADIO5_No ))->SetCheck(stoi(data[0][92]));
+	((CButton*)GetDlgItem(IDC_RADIO6_Yes))->SetCheck(stoi(data[0][93]));
+	((CButton*)GetDlgItem(IDC_RADIO6_No ))->SetCheck(stoi(data[0][94]));
+	((CButton*)GetDlgItem(IDC_RADIO7_Yes))->SetCheck(stoi(data[0][95]));
+	((CButton*)GetDlgItem(IDC_RADIO7_No ))->SetCheck(stoi(data[0][96]));
+	((CButton*)GetDlgItem(IDC_RADIO8_Yes))->SetCheck(stoi(data[0][97]));
+	((CButton*)GetDlgItem(IDC_RADIO8_No ))->SetCheck(stoi(data[0][98]));
 
 	uMySQL.Close();
 	return true;

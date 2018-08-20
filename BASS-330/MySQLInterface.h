@@ -39,7 +39,7 @@ public:
 	bool Select(const std::string& Querystr, std::vector<std::vector<std::string> >& data);	    
 	bool Query(const std::string& Querystr);   
 	int GetInsertID(const std::string& Querystr);
-	void ErrorIntoMySQL();		
+	void ErrorIntoMySQL();	
  
 public:
 	int ErrorNum;				

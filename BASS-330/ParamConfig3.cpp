@@ -93,11 +93,6 @@ BOOL CParamConfig3::OnInitDialog()
 	/************* 初始化子窗口全局指针3 **************/
 	pSubDlg3 = this;
 
-	/***************** 初始化组合框12 ******************/
-	( ( CButton *)GetDlgItem(IDC_RADIO12_No ) )->SetCheck( TRUE );	// 选择不配置
-
-	/***************** 初始化组合框13 ******************/
-	( ( CButton *)GetDlgItem(IDC_RADIO13_No ) )->SetCheck( TRUE );	// 选择不配置
 	// 空调
 	m13_airCondition.AddString(_T("00 - 缺"));
 	m13_airCondition.AddString(_T("01 - RC3000"));
@@ -132,9 +127,6 @@ BOOL CParamConfig3::OnInitDialog()
 	// 节能
 	m13_saveEnergy.AddString(_T("00 - 缺"));
 
-	/***************** 初始化组合框14 ******************/
-	( ( CButton *)GetDlgItem(IDC_RADIO14_No ) )->SetCheck( TRUE );	// 选择不配置
-
 	for(int i = 0; i <= 16; i++)
 	{
 		CString num;
@@ -153,8 +145,6 @@ BOOL CParamConfig3::OnInitDialog()
 	m14_threePhaseType.AddString(_T("00 - 外置"));
 	m14_threePhaseType.AddString(_T("01 - 电源"));
 
-	/***************** 初始化组合框15 ******************/
-	( ( CButton *)GetDlgItem(IDC_RADIO15_No ) )->SetCheck( TRUE );	// 选择不配置
 	// COM1 - COM3 转发
 	m15_seriesTransmit.AddString(_T("00 - 无"));
 	// 串口1 波特率
@@ -206,16 +196,7 @@ BOOL CParamConfig3::OnInitDialog()
 	m15_series2Checkbit.AddString(_T("03 - 1校验"));
 	m15_series2Checkbit.AddString(_T("04 - 0校验"));
 
-	/***************** 初始化组合框16 ******************/
-	( ( CButton *)GetDlgItem(IDC_RADIO16_No ) )->SetCheck( TRUE );	// 选择不配置
-
-	/***************** 初始化组合框17 ******************/
-	( ( CButton *)GetDlgItem(IDC_RADIO17_No ) )->SetCheck( TRUE );	// 选择不配置
-
-	/***************** 初始化组合框18 ******************/
-	( ( CButton *)GetDlgItem(IDC_RADIO18_No ) )->SetCheck( TRUE );	// 选择不配置
-
-	if(LoadParamConfig() == false) 
+	if(LoadParamConfig("BASS330CPU测试") == false) 
 	{
 		AfxMessageBox("加载参数配置失败！");
 	}
@@ -295,72 +276,150 @@ void CParamConfig3::OnBnClickedRadio18No()
 	( ( CButton* )( pSubDlg7->GetDlgItem( IDC_CHECK_7_18 ) ) )->SetCheck( FALSE );
 }
 
+bool CParamConfig3::IsExist(std::string target, std::string field, std::string table, MySQLInterface &uMySQL)
+{
+	using namespace std;
+	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
+
+	if(uMySQL.Open() == false)
+	{
+		TRACE("MySQL Connect Faild!\r\n");
+		return false;
+	}
+	vector<vector<string>> data;
+	string strsql = "SELECT " + field + " FROM " + table + " WHERE " + field + " = '" + target + "'";
+	if(uMySQL.Select(strsql, data) == false)
+		return false;
+	if(data.empty())
+		return false;
+	return true;
+}
+
 // 参数配置选择 新增按钮
 void CParamConfig3::OnBnClickedButtonAdd()
 {
-	if( /*IfExistsFile(ComboBox1->Text)*/ FALSE) // TODO: 实现函数IfExistsFile
+	MySQLInterface uMySQL;
+	CString TempStr;
+	m_ComboBox_Param.GetWindowText(TempStr);
+	std::string str(TempStr.GetBuffer());
+	if(IsExist(str, "PZMC", "paramconfig", uMySQL))
     {
 		MessageBox("指定的配置文件已存在，请直接修改！", "提示", MB_ICONWARNING);
+		uMySQL.Close();
         return;
-
     }
-    if( /*AddFileToBase() == FALSE*/ TRUE)		 // TODO: 实现函数AddFileToBase
+	uMySQL.Close();
+
+    if( SaveParamConfig() == false )	
     {
-		MessageBox("参数配置文件新增失败！", "提示", MB_ICONWARNING);
+		AfxMessageBox("添加失败！");
         return ;
     }
-    /*InitialParamCfgCombox();*/				 // TODO: 实现函数InitialParamCfgCombox
-	MessageBox("参数配置文件新增成功！", "提示", MB_ICONWARNING);
+	pSubDlg7->InitParamComboBox();
+
+	MessageBox("添加成功！", "提示", MB_ICONINFORMATION);
 }
 // 参数配置选择 导出按钮
 void CParamConfig3::OnBnClickedButtonExport()
 {
-	MessageBox("TODO: 实现导出按钮功能", "提示", MB_ICONWARNING);
-	 /*InitialParamCfgCombox();*/				 // TODO: 实现函数InitialParamCfgCombox
-	 /*AnsiString strSql = *** */				 // TODO: 实现Sql语句
-												 // TODO: 根据Sql语句进行数据库操作
-												 // TODO: 配置参数
+	MySQLInterface uMySQL;
+	CString TempStr;
+	m_ComboBox_Param.GetWindowText(TempStr);
+	std::string str(TempStr.GetBuffer());
+	if(!IsExist(str, "PZMC", "paramconfig", uMySQL))
+    {
+		MessageBox("指定的配置文件不存在，请重新选择！", "提示", MB_ICONWARNING);
+		uMySQL.Close();
+        return;
+    }
+	if(LoadParamConfig(str) == false) 
+	{
+		AfxMessageBox("导出失败！");
+		return;
+	}
+	if(pSubDlg1->LoadParamConfig(str) == false) 
+	{
+		AfxMessageBox("导出失败！");
+		return;
+	}
+	if(pSubDlg2->LoadParamConfig(str) == false)
+	{
+		AfxMessageBox("导出失败！");
+		return;
+	}
+	if(pSubDlg7->LoadParamConfig(str) == false) 
+	{
+		AfxMessageBox("导出失败！");
+		return;
+	}
+	MessageBox("导出成功！", "提示", MB_ICONINFORMATION);
 }
 // 参数配置选择 修改按钮
 void CParamConfig3::OnBnClickedButtonModify()
 {
-	if( /*!(IfExistsFile(ComboBox1->Text))*/ TRUE)
+	MySQLInterface uMySQL;
+	CString TempStr;
+	m_ComboBox_Param.GetWindowText(TempStr);
+	std::string str(TempStr.GetBuffer());
+	if(!IsExist(str, "PZMC", "paramconfig", uMySQL))
     {
 		MessageBox("指定的配置文件不存在，请新增！", "提示", MB_ICONWARNING);
+		uMySQL.Close();
         return;
     }
-    /*InitialParamCfgCombox();*/
 	if( IDCANCEL == MessageBox("确定修改参数吗？", "修改确认", MB_OKCANCEL | MB_ICONQUESTION) )
+	{
+		uMySQL.Close();
         return;
-    if( /*DelParamFileFromBase(ComboBox1->Text) == false*/ FALSE)
+	}
+    std::string strsql = "DELETE FROM paramconfig WHERE PZMC = '" + str + "'";
+	if(uMySQL.Query(strsql) == false)
+	{
+		AfxMessageBox("修改失败！");
+		uMySQL.Close();
+		return;
+	}
+	uMySQL.Close();
+    if( SaveParamConfig() == false )
     {
 		MessageBox("修改失败！", "提示", MB_ICONWARNING);
         return ;
     }
-    if( /*AddFileToBase() == false*/ TRUE)
-    {
-		MessageBox("修改失败！", "提示", MB_ICONWARNING);
-        return ;
-    }
-	MessageBox("修改成功！", "提示", MB_ICONWARNING);
+	MessageBox("修改成功！", "提示", MB_ICONINFORMATION);
 }
 // 参数配置选择 删除按钮
 void CParamConfig3::OnBnClickedButtonDelete()
 {
-	// TODO: 在此添加控件通知处理程序代码
-	if(IDCANCEL == MessageBox("确定删除所选的参数配置文件？", "删除确认", MB_OKCANCEL | MB_ICONQUESTION))
-        return;
-    if( /*DelParamFileFromBase(ComboBox1->Text) == false*/ TRUE)
+	MySQLInterface uMySQL;
+	CString TempStr;
+	m_ComboBox_Param.GetWindowText(TempStr);
+	std::string str(TempStr.GetBuffer());
+	if(!IsExist(str, "PZMC", "paramconfig", uMySQL))
     {
-        MessageBox("删除失败！", "提示", MB_ICONWARNING);
-        return ;
+		MessageBox("指定的配置文件不存在数据库中！", "提示", MB_ICONWARNING);
+		uMySQL.Close();
+        return;
     }
-    MessageBox("删除成功！", "提示", MB_ICONWARNING);
-    /*InitialParamCfgCombox();*/
+	if(IDCANCEL == MessageBox("确定删除所选的参数配置文件？", "删除确认", MB_OKCANCEL | MB_ICONQUESTION))
+	{
+		uMySQL.Close();
+        return;
+	}
+
+	std::string strsql = "DELETE FROM paramconfig WHERE PZMC = '" + str + "'";
+	if(uMySQL.Query(strsql) == false)
+	{
+		AfxMessageBox("删除失败！");
+		uMySQL.Close();
+		return;
+	}
+    MessageBox("删除成功！", "提示", MB_ICONINFORMATION);
+	uMySQL.Close();
+    pSubDlg7->InitParamComboBox();
 }
 
 // 从数据库加载配置参数
-bool CParamConfig3::LoadParamConfig()
+bool CParamConfig3::LoadParamConfig(std::string pzmc)
 {
 	using namespace std;
 
@@ -379,11 +438,15 @@ bool CParamConfig3::LoadParamConfig()
 	strsql += "COM13ZHF, CK1BTL, CK1SHJW, CK1TZHW, CK1JY, CK2BTL, CK2SHJW, CK2TZHW, CK2JY, ";
 	strsql += "GaoJYS, ShiYGJTD1, ShiYGJTD2, ShiYGJTD3, ShiYGJTD4, ShiYGJTD5, ShiYGJTD6, ShiYGJTD7, ShiYGJTD8, ";
 	strsql += "EYXSJ, EYXJS, EGJYS, ";
-	strsql += "QDDZH, QDDDYSH, QDKYXQ, QDCHKSHCH ";
-	strsql += "FROM paramconfig WHERE PZMC = 'BASS330CPU测试';";
-
+	strsql += "QDDZH, QDDDYSH, QDKYXQ, QDCHKSHCH, ";
+	strsql += "Radio12_Yes, Radio12_No, Radio13_Yes, Radio13_No, Radio14_Yes, Radio14_No, ";
+	strsql += "Radio15_Yes, Radio15_No, Radio16_Yes, Radio16_No, Radio17_Yes, Radio17_No, Radio18_Yes, Radio18_No ";
+	strsql += "FROM paramconfig WHERE PZMC = '" + pzmc + "'";
 	if(uMySQL.Select(strsql, data) == false)
+	{
+		uMySQL.Close();
 		return false;
+	}
 	
 	CString TempStr;
 	// 拍照设置
@@ -490,6 +553,364 @@ bool CParamConfig3::LoadParamConfig()
 	TempStr = data[0][44].c_str();
 	SetDlgItemText(IDC_EDIT18_4, TempStr); 
 
+	// 选择是否配置
+	((CButton*)GetDlgItem(IDC_RADIO12_Yes))->SetCheck(stoi(data[0][45]));
+	((CButton*)GetDlgItem(IDC_RADIO12_No ))->SetCheck(stoi(data[0][46]));
+	((CButton*)GetDlgItem(IDC_RADIO13_Yes))->SetCheck(stoi(data[0][47]));
+	((CButton*)GetDlgItem(IDC_RADIO13_No ))->SetCheck(stoi(data[0][48]));
+	((CButton*)GetDlgItem(IDC_RADIO14_Yes))->SetCheck(stoi(data[0][49]));
+	((CButton*)GetDlgItem(IDC_RADIO14_No ))->SetCheck(stoi(data[0][50]));
+	((CButton*)GetDlgItem(IDC_RADIO15_Yes))->SetCheck(stoi(data[0][51]));
+	((CButton*)GetDlgItem(IDC_RADIO15_No ))->SetCheck(stoi(data[0][52]));
+	((CButton*)GetDlgItem(IDC_RADIO16_Yes))->SetCheck(stoi(data[0][53]));
+	((CButton*)GetDlgItem(IDC_RADIO16_No ))->SetCheck(stoi(data[0][54]));
+	((CButton*)GetDlgItem(IDC_RADIO17_Yes))->SetCheck(stoi(data[0][55]));
+	((CButton*)GetDlgItem(IDC_RADIO17_No ))->SetCheck(stoi(data[0][56]));
+	((CButton*)GetDlgItem(IDC_RADIO18_Yes))->SetCheck(stoi(data[0][57]));
+	((CButton*)GetDlgItem(IDC_RADIO18_No ))->SetCheck(stoi(data[0][58]));
+
+	uMySQL.Close();
+	return true;
+}
+
+// 保存配置参数到数据库
+bool CParamConfig3::SaveParamConfig()
+{
+	using namespace std;
+
+	MySQLInterface uMySQL;
+	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
+
+	if(uMySQL.Open() == false)
+	{
+		TRACE("MySQL Connect Faild!\r\n");
+		return false;
+	}
+	CString strsql = "INSERT INTO paramconfig";
+	// 机器参数
+	strsql += "(PZMC, DiZhi, XTMiMa, MJMiMa, CXMiMa, LaBa, PingBao, AnJianYin, KH2M5, ";
+	// 空调设置
+	strsql += "KongZhiCK, SWTD, YFWTD, EFWTD, KZMS, SXWD, XXWD, LHSJ, ";
+	// 超级密码
+	strsql += "CJMM, ";
+	// 开锁设置
+	strsql += "SLX, MCK, MSSL, DKTSL, YDYSK, EDYSK, MJSG, ";
+	// 门禁设置
+	strsql += "MJLX, PBSJ, PBTS, MDGZFS, SFFS, PBMS, Lk, KH, KaLeiX, ZCM, MiMa, QuHao, ZhanHao, ";
+	// 风机设置
+	strsql += "QYJN, FJQKWD, FJQD, FJGB, KTSL, JCSJ, KTLX, ZRWD, GRKQ, RWWC, KTJG, FMTD, ";
+	strsql += "FDTD, ZRWW, FJJG, FJSWWD, FJSX3, FJDY3, SCTD3, SJSS3, FJLX3, JGSJ, YSSJ, ";
+	// 告警参数
+	strsql += "GJY, SFSS, DQYS, JDFW, MJYS, GJLX, YouXSJ, GaoJCS, PingBSJ, GJQR, GJSFBC, ";
+	// 通信方式
+	strsql += "LianLu2M, BoHao, DHCD, DianHuaSheZhi, JKCD, JianKongSheZhi, IPDKHao, IPDiZhi, JKXTJG7, SIMKBD, SIM, SIMWS, ";
+	// 防盗设置
+	strsql += "XHSHJ, TDH1, YYXSJ1, YYXJS1, GJYS1, TDH2, YYXSJ2, YYXJS2, GJYS2, TDH3, YYXSJ3, YYXJS3, GJYS3, TDH4, YYXSJ4, YYXJS4, GJYS4, ";
+	strsql += "TDH5, YYXSJ5, YYXJS5, GJYS5, TDH6, YYXSJ6, YYXJS6, GJYS6, TDH7, YYXSJ7, YYXJS7, GJYS7, TDH8, YYXSJ8, YYXJS8, GJYS8, ";
+	// 联动类型
+	strsql += "YLDLX, YMK, ELDLX, EMK, SanLDLX, SanMK, SiLDLX, SiMK, WLDLX, WMK, LLDLX, LMK, ";
+	// 告警联动
+	strsql += "YLDGO, ELDGO, SanLDGO, SiLDGO, WLDGO, LLDGO, ";
+	// 拍照设置
+	strsql += "KaiShiYS, XiangJianSJ, PaiZhaoSL, GaoJingTD1, GaoJingTD2, ";
+	// 智能监控
+	strsql += "KongT1, DianY1, UPS, YouJ, DianB, 231SL, KongTsl, ShangS, ZHNJKJN, ";
+	// 三相电设置
+	strsql += "DuanX, QueX, GuoY, QianY, SanXLX, SanXYSH, ";
+	// 串口参数
+	strsql += "COM13ZHF, CK1BTL, CK1SHJW, CK1TZHW, CK1JY, CK2BTL, CK2SHJW, CK2TZHW, CK2JY, ";
+	// 室外告警
+	strsql += "GaoJYS, ShiYGJTD1, ShiYGJTD2, ShiYGJTD3, ShiYGJTD4, ShiYGJTD5, ShiYGJTD6, ShiYGJTD7, ShiYGJTD8, ";
+	// 振动设置
+	strsql += "EYXSJ, EYXJS, EGJYS, ";
+	// 插卡取电
+	strsql += "QDDZH, QDDDYSH, QDKYXQ, QDCHKSHCH,  ";
+	// 配置选项
+	strsql += "Radio1_Yes, Radio1_No, Radio2_Yes, Radio2_No, Radio3_Yes, Radio3_No, Radio4_Yes, Radio4_No, ";
+	strsql += "Radio5_Yes, Radio5_No, Radio6_Yes, Radio6_No, Radio7_Yes, Radio7_No, Radio8_Yes, Radio8_No, ";
+	strsql += "Radio9_Yes, Radio9_No, Radio10_Yes, Radio10_No, Radio11_Yes, Radio11_No, ";
+	strsql += "Radio12_Yes, Radio12_No, Radio13_Yes, Radio13_No, Radio14_Yes, Radio14_No, ";
+	strsql += "Radio15_Yes, Radio15_No, Radio16_Yes, Radio16_No, Radio17_Yes, Radio17_No, Radio18_Yes, Radio18_No, ";
+	strsql += "Check_7_1, Check_7_2, Check_7_3, Check_7_4, Check_7_5, Check_7_6, Check_7_7, ";
+	strsql += "Check_7_8, Check_7_9, Check_7_10, Check_7_11, Check_7_12, Check_7_13, Check_7_14, Check_7_15, ";
+	strsql += "Check_7_16, Check_7_17, Check_7_18, Check_7_19, Check_7_20, Check_7_21, Check_7_22, Check_7_23, ";
+	strsql += "Radio_7_3, Radio_7_4, Radio_7_5, Radio_7_6, Radio_7_7) ";
+	strsql += "VALUES( '";
+	CString TempStr;
+	// 新增配置的名称
+	GetDlgItemText(IDC_COMBO3, TempStr); strsql += (TempStr + "', '");
+	// 机器参数
+	pSubDlg1->GetDlgItemText(IDC_EDIT1_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT1_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT1_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT1_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO1_1, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO1_2, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO1_3, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO1_4, TempStr); strsql += (TempStr + "', '");
+	// 空调设置
+	pSubDlg1->GetDlgItemText(IDC_COMBO2_1, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO2_2, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO2_3, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO2_4, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO2_5, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT2_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT2_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT2_3, TempStr);  strsql += (TempStr + "', '");
+	// 超级密码
+	pSubDlg1->GetDlgItemText(IDC_EDIT3_1, TempStr);  strsql += (TempStr + "', '");
+	// 开锁设置
+	pSubDlg1->GetDlgItemText(IDC_COMBO4_1, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT4_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO4_2, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO4_3, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO4_4, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO4_5, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO4_6, TempStr); strsql += (TempStr + "', '");
+	// 门禁设置
+	pSubDlg1->GetDlgItemText(IDC_COMBO5_1, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT5_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT5_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO5_2, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO5_3, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO5_4, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO5_5, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO5_6, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO5_7, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT5_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT5_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT5_5, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT5_6, TempStr);  strsql += (TempStr + "', '");
+	// 风机设置
+	pSubDlg1->GetDlgItemText(IDC_COMBO6_1, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO6_2, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO6_3, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_5, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO6_4, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_6, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_7, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_8, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_9, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_10, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_11, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_12, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_13, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO6_5, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO6_6, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO6_7, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO6_8, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_14, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT6_15, TempStr);  strsql += (TempStr + "', '");
+	// 告警参数
+	pSubDlg1->GetDlgItemText(IDC_COMBO7_1, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO7_2, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT7_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT7_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT7_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO7_3, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT7_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT7_5, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT7_6, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO7_4, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO7_5, TempStr); strsql += (TempStr + "', '");
+	// 通信方式
+	pSubDlg1->GetDlgItemText(IDC_COMBO8_1, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO8_2, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT8_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT8_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT8_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT8_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT8_5, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT8_6, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT8_7, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_COMBO8_3, TempStr); strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT8_8, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg1->GetDlgItemText(IDC_EDIT8_9, TempStr);  strsql += (TempStr + "', '");
+	// 防盗设置
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_1_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_1_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_1_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_1_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_2_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_2_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_2_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_2_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_3_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_3_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_3_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_3_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_4_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_4_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_4_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_4_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_5_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_5_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_5_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_5_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_6_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_6_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_6_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_6_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_7_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_7_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_7_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_7_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_8_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_8_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_8_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT9_8_4, TempStr);  strsql += (TempStr + "', '");
+	// 联动类型
+	pSubDlg2->GetDlgItemText(IDC_COMBO10_1_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT10_1_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO10_2_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT10_2_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO10_3_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT10_3_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO10_4_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT10_4_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO10_5_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT10_5_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO10_6_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_EDIT10_6_1, TempStr);  strsql += (TempStr + "', '");
+	// 告警联动
+	pSubDlg2->GetDlgItemText(IDC_COMBO11_1, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO11_2, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO11_3, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO11_4, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO11_5, TempStr);  strsql += (TempStr + "', '");
+	pSubDlg2->GetDlgItemText(IDC_COMBO11_6, TempStr);  strsql += (TempStr + "', '");
+	// 拍照设置
+	GetDlgItemText(IDC_EDIT12_1, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT12_2, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO12_1, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT12_3, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT12_4, TempStr);  strsql += (TempStr + "', '");
+	// 智能监控
+	GetDlgItemText(IDC_COMBO13_1, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO13_2, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO13_3, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO13_4, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO13_5, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO13_6, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO13_7, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT13_1, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO13_8, TempStr);  strsql += (TempStr + "', '");
+	// 三相电设置
+	GetDlgItemText(IDC_COMBO14_1, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO14_2, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO14_3, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO14_4, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO14_5, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT14_1, TempStr);  strsql += (TempStr + "', '");
+	// 串口参数	
+	GetDlgItemText(IDC_COMBO15_1, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO15_2, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO15_3, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO15_4, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO15_5, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO15_6, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO15_7, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO15_8, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_COMBO15_9, TempStr);  strsql += (TempStr + "', '");
+	// 室外告警
+	GetDlgItemText(IDC_EDIT16_1, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT16_2, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT16_3, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT16_4, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT16_5, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT16_6, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT16_7, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT16_8, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT16_9, TempStr);  strsql += (TempStr + "', '");
+	// 振动设置
+	GetDlgItemText(IDC_EDIT17_1, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT17_2, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT17_3, TempStr);  strsql += (TempStr + "', '");
+	// 插卡取电
+	GetDlgItemText(IDC_EDIT18_1, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT18_2, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT18_3, TempStr);  strsql += (TempStr + "', '");
+	GetDlgItemText(IDC_EDIT18_4, TempStr);  strsql += (TempStr + "', '");
+	// 配置选项
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO1_Yes)))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO1_No )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO2_Yes)))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO2_No )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO3_Yes)))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO3_No )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO4_Yes)))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO4_No )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO5_Yes)))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO5_No )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO6_Yes)))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO6_No )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO7_Yes)))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO7_No )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO8_Yes)))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg1->GetDlgItem(IDC_RADIO8_No )))->GetCheck()); strsql += (TempStr + "', '");
+
+	TempStr = ToString(((CButton*)(pSubDlg2->GetDlgItem(IDC_RADIO9_Yes)))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg2->GetDlgItem(IDC_RADIO9_No )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg2->GetDlgItem(IDC_RADIO10_Yes)))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg2->GetDlgItem(IDC_RADIO10_No )))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg2->GetDlgItem(IDC_RADIO11_Yes)))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg2->GetDlgItem(IDC_RADIO11_No )))->GetCheck());strsql += (TempStr + "', '");
+
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO12_Yes)))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO12_No )))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO13_Yes)))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO13_No )))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO14_Yes)))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO14_No )))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO15_Yes)))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO15_No )))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO16_Yes)))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO16_No )))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO17_Yes)))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO17_No )))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO18_Yes)))->GetCheck());strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(GetDlgItem(IDC_RADIO18_No )))->GetCheck());strsql += (TempStr + "', '");
+	
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_1 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_2 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_3 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_4 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_5 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_6 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_7 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_8 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_9 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_10 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_11 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_12 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_13 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_14 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_15 )))->GetCheck()); strsql += (TempStr + "', '");//
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_16 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_17 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_18 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_19 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_24 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_25 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_26 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_27 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_3 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_4 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_5 )))->GetCheck()); strsql += (TempStr + "', '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_6 )))->GetCheck()); strsql += (TempStr + "'. '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_7 )))->GetCheck()); strsql += (TempStr + "');");//
+
+	std::string QueryStr(strsql.GetBuffer());
+	if(uMySQL.Query(QueryStr) == false)
+	{
+		uMySQL.Close();
+		return false;
+	}
 	uMySQL.Close();
 	return true;
 }

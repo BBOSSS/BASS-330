@@ -1,6 +1,7 @@
 #pragma once
 #include "afxwin.h"
 #include "TinyFunc.h"
+#include "MySQLInterface.h"
 
 // CParamConfig3 对话框
 
@@ -54,7 +55,11 @@ public:
 	CComboBox m_ComboBox_Param;
 
 	// 从数据库加载配置参数
-	bool LoadParamConfig();
+	bool LoadParamConfig(std::string pzmc);
+	// 保存配置参数到数据库
+	bool SaveParamConfig();
+	// 判断数据库是否有该参数配置
+	bool IsExist(std::string target, std::string field, std::string table, MySQLInterface &uMySQL);
 
 	afx_msg void OnBnClickedRadio12Yes();
 	afx_msg void OnBnClickedRadio12No();

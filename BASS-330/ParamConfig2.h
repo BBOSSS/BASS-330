@@ -1,6 +1,6 @@
 #pragma once
 #include "afxwin.h"
-
+#include <string>
 // CParamConfig2 对话框
 
 class CParamConfig2 : public CDialog
@@ -36,7 +36,7 @@ public:
 	CComboBox m11_optocoupler6;
 
 	// 从数据库加载配置参数
-	bool LoadParamConfig();
+	bool LoadParamConfig(std::string pzmc);
 
 	afx_msg void OnBnClickedRadio9Yes();
 	afx_msg void OnBnClickedRadio9No();

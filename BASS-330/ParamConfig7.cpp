@@ -80,14 +80,7 @@ BOOL CParamConfig7::OnInitDialog()
 	// 初始化子窗口全局指针7
 	pSubDlg7 = this;
 
-	// 全不选
-	( ( CButton *)GetDlgItem( IDC_RADIO_7_2 ) )->SetCheck( TRUE );
-
-	// 16 通道
-	( ( CButton *)GetDlgItem( IDC_CHECK_7_24 ) )->SetCheck( TRUE );
-
-	// 通用版本
-	( ( CButton *)GetDlgItem( IDC_CHECK_7_26 ) )->SetCheck( TRUE );
+	LoadParamConfig("BASS330CPU测试");
 
 	// 初始化定时器锁 临界区
 	InitializeCriticalSection(&m_TimeLock);
@@ -830,6 +823,9 @@ bool CParamConfig7::InitParamComboBox()
 {
 	using namespace std;
 
+	m_ComboBox_Param.ResetContent();
+	pSubDlg3->m_ComboBox_Param.ResetContent();
+
 	MySQLInterface uMySQL;
 	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
 
@@ -848,8 +844,8 @@ bool CParamConfig7::InitParamComboBox()
 		m_ComboBox_Param.AddString(temp);
 		(pSubDlg3->m_ComboBox_Param).AddString(temp);
 	}
-	m_ComboBox_Param.SetCurSel( 2 );
-	(pSubDlg3->m_ComboBox_Param).SetCurSel( 2 );
+	m_ComboBox_Param.SetCurSel( 0 );
+	(pSubDlg3->m_ComboBox_Param).SetCurSel( 0 );
 	uMySQL.Close();
 	return true;
 }
@@ -858,6 +854,9 @@ bool CParamConfig7::InitParamComboBox()
 bool CParamConfig7::InitChannelComboBox()
 {
 	using namespace std;
+
+	m_ComboBox_Channel.ResetContent();
+	pSubDlg4->m_ComboBox_Channel.ResetContent();
 
 	MySQLInterface uMySQL;
 	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
@@ -877,8 +876,8 @@ bool CParamConfig7::InitChannelComboBox()
 		m_ComboBox_Channel.AddString(temp);
 		(pSubDlg4->m_ComboBox_Channel).AddString(temp);
 	}
-	m_ComboBox_Channel.SetCurSel( 2 );
-	(pSubDlg4->m_ComboBox_Channel).SetCurSel( 2 );
+	m_ComboBox_Channel.SetCurSel( 3 );
+	(pSubDlg4->m_ComboBox_Channel).SetCurSel( 3 );
 	uMySQL.Close();
 	return true;
 }
@@ -887,6 +886,9 @@ bool CParamConfig7::InitChannelComboBox()
 bool CParamConfig7::InitListComboBox()
 {
 	using namespace std;
+
+	m_ComboBox_List.ResetContent();
+	pSubDlg4->m_ComboBox_List.ResetContent();
 
 	MySQLInterface uMySQL;
 	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
@@ -906,8 +908,68 @@ bool CParamConfig7::InitListComboBox()
 		m_ComboBox_List.AddString(temp);
 		(pSubDlg4->m_ComboBox_List).AddString(temp);
 	}
-	m_ComboBox_List.SetCurSel( 2 );
-	(pSubDlg4->m_ComboBox_List).SetCurSel( 2 );
+	m_ComboBox_List.SetCurSel( 0 );
+	(pSubDlg4->m_ComboBox_List).SetCurSel( 0 );
+	uMySQL.Close();
+	return true;
+}
+
+// 从数据库加载配置参数
+bool CParamConfig7::LoadParamConfig(std::string pzmc)
+{
+	using namespace std;
+
+	MySQLInterface uMySQL;
+	uMySQL.SetMySQLConInfo(SERVER, USER, PASSWORD, DATABASE, PORT);
+
+	if(uMySQL.Open() == false)
+	{
+		TRACE("MySQL Connect Faild!\r\n");
+		return false;
+	}
+	vector<vector<string>> data;
+	string strsql = "SELECT Check_7_1, Check_7_2, Check_7_3, Check_7_4, Check_7_5, Check_7_6, Check_7_7, ";
+	strsql += "Check_7_8, Check_7_9, Check_7_10, Check_7_11, Check_7_12, Check_7_13, Check_7_14, Check_7_15, ";
+	strsql += "Check_7_16, Check_7_17, Check_7_18, Check_7_19, Check_7_20, Check_7_21, Check_7_22, Check_7_23, ";
+	strsql += "Radio_7_3, Radio_7_4, Radio_7_5, Radio_7_6, Radio_7_7 ";
+	strsql += "FROM paramconfig WHERE PZMC = '" + pzmc + "'";
+
+	if(uMySQL.Select(strsql, data) == false)
+	{
+		uMySQL.Close();
+		return false;
+	}
+
+	// 选择是否配置
+	((CButton*)GetDlgItem(IDC_CHECK_7_1))->SetCheck(stoi(data[0][0]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_2))->SetCheck(stoi(data[0][1]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_3))->SetCheck(stoi(data[0][2]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_4))->SetCheck(stoi(data[0][3]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_5))->SetCheck(stoi(data[0][4]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_6))->SetCheck(stoi(data[0][5]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_7))->SetCheck(stoi(data[0][6]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_8))->SetCheck(stoi(data[0][7]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_9))->SetCheck(stoi(data[0][8]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_10))->SetCheck(stoi(data[0][9]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_11))->SetCheck(stoi(data[0][10]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_12))->SetCheck(stoi(data[0][11]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_13))->SetCheck(stoi(data[0][12]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_14))->SetCheck(stoi(data[0][13]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_15))->SetCheck(stoi(data[0][14]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_16))->SetCheck(stoi(data[0][15]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_17))->SetCheck(stoi(data[0][16]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_18))->SetCheck(stoi(data[0][17]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_19))->SetCheck(stoi(data[0][18]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_24))->SetCheck(stoi(data[0][19]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_25))->SetCheck(stoi(data[0][20]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_26))->SetCheck(stoi(data[0][21]));
+	((CButton*)GetDlgItem(IDC_CHECK_7_27))->SetCheck(stoi(data[0][22]));
+	((CButton*)GetDlgItem(IDC_RADIO_7_3))->SetCheck(stoi(data[0][23]));
+	((CButton*)GetDlgItem(IDC_RADIO_7_4))->SetCheck(stoi(data[0][24]));
+	((CButton*)GetDlgItem(IDC_RADIO_7_5))->SetCheck(stoi(data[0][25]));
+	((CButton*)GetDlgItem(IDC_RADIO_7_6))->SetCheck(stoi(data[0][26]));
+	((CButton*)GetDlgItem(IDC_RADIO_7_7))->SetCheck(stoi(data[0][27]));
+
 	uMySQL.Close();
 	return true;
 }

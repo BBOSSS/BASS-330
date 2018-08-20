@@ -3,6 +3,7 @@
 #include "GlobalVariables.h"
 #include "TinyFunc.h"
 #include "afxwin.h"
+#include <string>
 
 #define		SYSTEM_TIME_TIMER	 10
 
@@ -42,6 +43,8 @@ public:
 	bool InitChannelComboBox();
 	// 初始化名单配置下拉框
 	bool InitListComboBox();
+	// 从数据库加载配置参数
+	bool LoadParamConfig(std::string pzmc);
 
 	CFont m_Font;
 	CEdit m_Edit_Time_Passwod;

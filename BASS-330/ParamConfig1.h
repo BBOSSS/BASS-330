@@ -73,7 +73,7 @@ public:
 	CComboBox m8_boundSIM;
 
 	// 从数据库加载配置参数
-	bool LoadParamConfig();	
+	bool LoadParamConfig(std::string pzmc);
 
 	afx_msg void OnBnClickedRadio1Yes();
 	afx_msg void OnBnClickedRadio1No();
