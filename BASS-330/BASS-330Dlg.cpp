@@ -126,6 +126,7 @@ BOOL CBASS330Dlg::OnInitDialog()
 	GetDlgItem(IDC_GROUP_MAIN)->GetWindowRect(&m_MainRect);
 	OnStnClickedStaticDebug();		// 设置初始区域显示
 
+	// 判断是否存在ini文件
 	CIniFile iniFile;
 	std::vector<CIniFile::Record> contents;
 	if( !iniFile.Load("BASS330.ini", contents) )
