@@ -73,6 +73,7 @@ BEGIN_MESSAGE_MAP(CParamConfig3, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON3_2, &CParamConfig3::OnBnClickedButtonExport)
 	ON_BN_CLICKED(IDC_BUTTON3_3, &CParamConfig3::OnBnClickedButtonModify)
 	ON_BN_CLICKED(IDC_BUTTON3_4, &CParamConfig3::OnBnClickedButtonDelete)
+	ON_CBN_SELCHANGE(IDC_COMBO3, &CParamConfig3::OnCbnSelchangeComboParamExport)
 END_MESSAGE_MAP()
 
 
@@ -276,6 +277,7 @@ void CParamConfig3::OnBnClickedRadio18No()
 	( ( CButton* )( pSubDlg7->GetDlgItem( IDC_CHECK_7_18 ) ) )->SetCheck( FALSE );
 }
 
+// 判断是否存在 
 bool CParamConfig3::IsExist(std::string target, std::string field, std::string table, MySQLInterface &uMySQL)
 {
 	using namespace std;
@@ -315,7 +317,9 @@ void CParamConfig3::OnBnClickedButtonAdd()
 		AfxMessageBox("添加失败！");
         return ;
     }
-	pSubDlg7->InitParamComboBox();
+	m_ComboBox_Param.AddString(TempStr);
+	pSubDlg7->m_ComboBox_Param.AddString(TempStr);
+	pSubDlg7->m_ComboBox_Param.SetWindowText(TempStr);
 
 	MessageBox("添加成功！", "提示", MB_ICONINFORMATION);
 }
@@ -332,6 +336,7 @@ void CParamConfig3::OnBnClickedButtonExport()
 		uMySQL.Close();
         return;
     }
+	uMySQL.Close();
 	if(LoadParamConfig(str) == false) 
 	{
 		AfxMessageBox("导出失败！");
@@ -352,6 +357,7 @@ void CParamConfig3::OnBnClickedButtonExport()
 		AfxMessageBox("导出失败！");
 		return;
 	}
+	pSubDlg7->m_ComboBox_Param.SetWindowText(TempStr);
 	MessageBox("导出成功！", "提示", MB_ICONINFORMATION);
 }
 // 参数配置选择 修改按钮
@@ -385,6 +391,7 @@ void CParamConfig3::OnBnClickedButtonModify()
 		MessageBox("修改失败！", "提示", MB_ICONWARNING);
         return ;
     }
+	pSubDlg7->m_ComboBox_Param.SetWindowText(TempStr);
 	MessageBox("修改成功！", "提示", MB_ICONINFORMATION);
 }
 // 参数配置选择 删除按钮
@@ -624,7 +631,7 @@ bool CParamConfig3::SaveParamConfig()
 	// 振动设置
 	strsql += "EYXSJ, EYXJS, EGJYS, ";
 	// 插卡取电
-	strsql += "QDDZH, QDDDYSH, QDKYXQ, QDCHKSHCH,  ";
+	strsql += "QDDZH, QDDDYSH, QDKYXQ, QDCHKSHCH, ";
 	// 配置选项
 	strsql += "Radio1_Yes, Radio1_No, Radio2_Yes, Radio2_No, Radio3_Yes, Radio3_No, Radio4_Yes, Radio4_No, ";
 	strsql += "Radio5_Yes, Radio5_No, Radio6_Yes, Radio6_No, Radio7_Yes, Radio7_No, Radio8_Yes, Radio8_No, ";
@@ -902,7 +909,7 @@ bool CParamConfig3::SaveParamConfig()
 	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_3 )))->GetCheck()); strsql += (TempStr + "', '");
 	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_4 )))->GetCheck()); strsql += (TempStr + "', '");
 	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_5 )))->GetCheck()); strsql += (TempStr + "', '");
-	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_6 )))->GetCheck()); strsql += (TempStr + "'. '");
+	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_6 )))->GetCheck()); strsql += (TempStr + "', '");
 	TempStr = ToString(((CButton*)(pSubDlg7->GetDlgItem(IDC_RADIO_7_7 )))->GetCheck()); strsql += (TempStr + "');");//
 
 	std::string QueryStr(strsql.GetBuffer());
@@ -913,4 +920,12 @@ bool CParamConfig3::SaveParamConfig()
 	}
 	uMySQL.Close();
 	return true;
+}
+// 同步参数组合框
+void CParamConfig3::OnCbnSelchangeComboParamExport()
+{
+	CString TempStr;
+	int nSel = m_ComboBox_Param.GetCurSel();    
+    m_ComboBox_Param.GetLBText(nSel, TempStr);
+	pSubDlg7->m_ComboBox_Param.SetWindowText(TempStr);
 }

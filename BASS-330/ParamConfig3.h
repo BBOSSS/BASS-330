@@ -80,4 +80,5 @@ public:
 	afx_msg void OnBnClickedButtonModify();
 	afx_msg void OnBnClickedButtonDelete();
 	
+	afx_msg void OnCbnSelchangeComboParamExport();
 };

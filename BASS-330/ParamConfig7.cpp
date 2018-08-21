@@ -17,6 +17,7 @@ CParamConfig7::CParamConfig7(CWnd* pParent /*=NULL*/)
 	: CDialog(CParamConfig7::IDD, pParent)
 	, m_pGetSystimeAndPasswordThread(NULL)
 	, m_pTestDoThread(NULL)
+	, m_ParamSuccessCount(0)
 {
 
 }
@@ -66,6 +67,13 @@ BEGIN_MESSAGE_MAP(CParamConfig7, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON_7_5, &CParamConfig7::OnBnClickedButton_Get_Systime_And_SuperPassword)
 	ON_WM_CTLCOLOR()
 	ON_BN_CLICKED(IDC_BUTTON_7_4, &CParamConfig7::OnBnClickedButton_Test)
+	ON_BN_CLICKED(IDC_BUTTON_7_1, &CParamConfig7::OnBnClickedButtonParamExport)
+	ON_CBN_SELCHANGE(IDC_COMBO_7_1, &CParamConfig7::OnCbnSelchangeComboParam)
+	ON_BN_CLICKED(IDC_BUTTON_7_2, &CParamConfig7::OnBnClickedButtonChannelExport)
+	ON_CBN_SELCHANGE(IDC_COMBO_7_2, &CParamConfig7::OnCbnSelchangeComboChannel)
+	ON_CBN_SELCHANGE(IDC_COMBO_7_3, &CParamConfig7::OnCbnSelchangeComboList)
+	ON_BN_CLICKED(IDC_BUTTON_7_3, &CParamConfig7::OnBnClickedButtonListExport)
+	ON_BN_CLICKED(IDC_BUTTON_7_6, &CParamConfig7::OnBnClickedButtonParamResetCnt)
 END_MESSAGE_MAP()
 
 
@@ -972,4 +980,62 @@ bool CParamConfig7::LoadParamConfig(std::string pzmc)
 
 	uMySQL.Close();
 	return true;
+}
+// 参数配置导出按钮
+void CParamConfig7::OnBnClickedButtonParamExport()
+{
+	CString TempStr;
+	m_ComboBox_Param.GetWindowText(TempStr);
+	pSubDlg3->m_ComboBox_Param.SetWindowText(TempStr);
+	pSubDlg3->OnBnClickedButtonExport();
+}
+// 同步参数组合框
+void CParamConfig7::OnCbnSelchangeComboParam()
+{
+	CString TempStr;
+	int nSel = m_ComboBox_Param.GetCurSel();    
+    m_ComboBox_Param.GetLBText(nSel, TempStr);
+	pSubDlg3->m_ComboBox_Param.SetWindowText(TempStr);
+}
+
+// 通道配置导出按钮
+void CParamConfig7::OnBnClickedButtonChannelExport()
+{
+	CString TempStr;
+	m_ComboBox_Channel.GetWindowText(TempStr);
+	pSubDlg4->m_ComboBox_Channel.SetWindowText(TempStr);
+	pSubDlg4->OnBnClickedButtonPathExport();
+}
+// 同步通道组合框
+void CParamConfig7::OnCbnSelchangeComboChannel()
+{
+	CString TempStr;
+	int nSel = m_ComboBox_Channel.GetCurSel();    
+    m_ComboBox_Channel.GetLBText(nSel, TempStr);
+	pSubDlg4->m_ComboBox_Channel.SetWindowText(TempStr);
+}
+
+
+// 名单配置导出按钮
+void CParamConfig7::OnBnClickedButtonListExport()
+{
+	CString TempStr;
+	m_ComboBox_List.GetWindowText(TempStr);
+	pSubDlg4->m_ComboBox_List.SetWindowText(TempStr);
+	pSubDlg4->OnBnClickedButtonListExport();
+}
+// 同步名单组合框
+void CParamConfig7::OnCbnSelchangeComboList()
+{
+	CString TempStr;
+	int nSel = m_ComboBox_List.GetCurSel();    
+    m_ComboBox_List.GetLBText(nSel, TempStr);
+	pSubDlg4->m_ComboBox_List.SetWindowText(TempStr);
+}
+
+// 参数配置成功次数清零
+void CParamConfig7::OnBnClickedButtonParamResetCnt()
+{
+	m_ParamSuccessCount = 0;
+	SetDlgItemText(IDC_EDIT_7_6, ToString(m_ParamSuccessCount));
 }

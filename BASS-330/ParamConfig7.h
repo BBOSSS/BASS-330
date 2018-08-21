@@ -63,6 +63,8 @@ public:
 	CWinThread *m_pTestDoThread;				// AIDI采集,光耦和继电器测试线程
 	static UINT TestDoThread(LPVOID pParam);
 
+	unsigned int m_ParamSuccessCount;			// 参数配置成功次数
+
 	afx_msg void OnBnClickedCheck_7_1( );
 	afx_msg void OnBnClickedCheck_7_2( );
 	afx_msg void OnBnClickedCheck_7_3( );
@@ -92,4 +94,11 @@ public:
 
 	afx_msg void OnBnClickedButton_Get_Systime_And_SuperPassword();	
 	afx_msg void OnBnClickedButton_Test();
+	afx_msg void OnBnClickedButtonParamExport();
+	afx_msg void OnCbnSelchangeComboParam();
+	afx_msg void OnBnClickedButtonChannelExport();
+	afx_msg void OnCbnSelchangeComboChannel();
+	afx_msg void OnCbnSelchangeComboList();
+	afx_msg void OnBnClickedButtonListExport();
+	afx_msg void OnBnClickedButtonParamResetCnt();
 };
