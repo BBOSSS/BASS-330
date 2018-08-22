@@ -54,7 +54,10 @@ public:
 	void StopAllTimer();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 
-	COLORREF m_ResColor;
+	COLORREF m_ResColor7_5;
+	COLORREF m_ResColor7_2;
+	COLORREF m_ResColor7_7;
+
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 
 	CWinThread *m_pGetSystimeAndPasswordThread;	// 读取系统时间和超级密码线程

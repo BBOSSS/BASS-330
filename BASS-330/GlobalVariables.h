@@ -36,6 +36,7 @@ class CParamConfig4;
 class CParamConfig5;
 class CParamConfig6;
 class CParamConfig7;
+class CProcessBar;
 
 extern CBASS330Dlg	 *	pMainDlg;		// 主窗口全局指针
 extern CParamConfig1 *	pSubDlg1;		// 标签子窗口指针1

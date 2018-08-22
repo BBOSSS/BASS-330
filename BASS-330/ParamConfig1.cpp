@@ -306,7 +306,6 @@ BOOL CParamConfig1::OnInitDialog()
 	}
 	
 	return TRUE;  // return TRUE unless you set the focus to a control
-	// 异常: OCX 属性页应返回 FALSE
 }
 
 void CParamConfig1::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)

@@ -195,6 +195,31 @@ int CProtocolHandle::GetPureData(BYTE Cmd, BYTE* RecvBuffer, int RecvBufLen)
 	return length;
 }
 
+// 打包通道属性的数据
+void CProtocolHandle::PacketItemAttriData(ItemAttri ItemValue, BYTE* SendData)
+{
+    SendData[0]  = ItemValue.No;
+    SendData[1]  = ItemValue.Type;
+    SendData[2]  = ItemValue.Uplimit >> 8;
+    SendData[3]  = ItemValue.Uplimit & 0xFF;
+    SendData[4]  = 0x00;
+    SendData[5]  = 0x00;
+    SendData[6]  = ItemValue.Dnlimit >> 8;
+    SendData[7]  = ItemValue.Dnlimit & 0xFF;
+    SendData[8]  = 0x00;
+    SendData[9]  = 0x00;
+    SendData[10] = 0x00;
+    SendData[11] = (BYTE)ItemValue.Tol;
+    SendData[12] = 0x00;
+    SendData[13] = 0x00;
+    SendData[14] = 0x00;
+    SendData[15] = (BYTE)ItemValue.Adj;
+    SendData[16] = 0x00;
+    SendData[17] = 0x00;
+    SendData[18] = ItemValue.Upout;
+    SendData[19] = ItemValue.Dnout;
+}
+
 // 成员变量全置为0
 void CProtocolHandle::Clear()
 {

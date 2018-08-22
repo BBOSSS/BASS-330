@@ -3,6 +3,8 @@
 #include "TinyFunc.h"
 #include "afxwin.h"
 #include "MySQLInterface.h"
+#include "ProcessBar.h"
+#include "afxdtctl.h"
 
 // CParamConfig4 对话框
 #define  IDC_EDIT_CREATEID		3000
@@ -76,9 +78,25 @@ protected:
 public:
 	CComboBox m_ComboBox_Channel;
 	CComboBox m_ComboBox_List;
+	CComboBox m_ComboBox_WorkList;
+
 	unsigned int m_ChannelSuccessCount;
 	unsigned int m_ListSuccessCount;
 	unsigned int m_ListCount;
+
+	unsigned int m_ChannelCount;
+
+	CWinThread *m_pSetItemAttriThread;				// 设置通道属性线程
+	static UINT SetItemAttriThread(LPVOID pParam);
+
+	CWinThread *m_pSetListThread;					// 开始通用名单配置线程
+	static UINT SetListThread(LPVOID pParam);
+	CWinThread *m_pSetListThread2M;					// 开始2M名单配置线程
+	static UINT SetListThread2M(LPVOID pParam);
+
+	CProcessBar* m_processBar;						// 进度条对话框指针
+	CDateTimeCtrl m_DateTime;						// 日期控件
+
 	afx_msg void OnBnClickedButtonListExport();
 	afx_msg void OnBnClickedButtonListAddOne();
 	afx_msg void OnBnClickedButtonListDeleteOne();

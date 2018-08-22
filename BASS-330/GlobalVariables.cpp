@@ -25,3 +25,4 @@ CParamConfig6 *	pSubDlg6;		// 标签子窗口指针6
 CParamConfig7 *	pSubDlg7;		// 标签子窗口指针7
 
 
+

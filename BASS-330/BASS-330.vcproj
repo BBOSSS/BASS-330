@@ -240,6 +240,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ProcessBar.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ProtocolHandle.cpp"
 				>
 			</File>
@@ -327,6 +331,10 @@
 			</File>
 			<File
 				RelativePath=".\ParamConfig7.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ProcessBar.h"
 				>
 			</File>
 			<File

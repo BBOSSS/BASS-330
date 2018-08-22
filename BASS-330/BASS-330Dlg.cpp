@@ -616,7 +616,7 @@ UINT CBASS330Dlg::ClearRecordThread(LPVOID pParam)
 
 	if(FALSE == ComProto.isVaildPacket(0x35, RecvBuffer, RecvBufLen))
 	{
-		AfxMessageBox("清除门禁记录失败失败！");
+		AfxMessageBox("清除门禁记录失败！");
 		return FALSE;
 	}
 	pMainDlg->MessageBox("清除门禁记录成功！", "提示", MB_ICONINFORMATION);
@@ -652,7 +652,7 @@ UINT CBASS330Dlg::ClearListThread(LPVOID pParam)
 	if(pMainDlg->m_bRecvPacketTail == false)						// 检查标志位 超过3秒没收到包尾
 	{
 		TRACE("Receive overtime!\n");
-		AfxMessageBox("清除门禁记录失败！");
+		AfxMessageBox("清除黑白名单失败！");
 		return FALSE;
 	}
 	int RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
@@ -660,10 +660,10 @@ UINT CBASS330Dlg::ClearListThread(LPVOID pParam)
 
 	if(FALSE == ComProto.isVaildPacket(0x38, RecvBuffer, RecvBufLen))
 	{
-		AfxMessageBox("清除门禁记录失败失败！");
+		AfxMessageBox("清除黑白名单失败！");
 		return FALSE;
 	}
-	pMainDlg->MessageBox("清除门禁记录成功！", "提示", MB_ICONINFORMATION);
+	pMainDlg->MessageBox("清除黑白名单成功！", "提示", MB_ICONINFORMATION);
 	return TRUE;
 }
 

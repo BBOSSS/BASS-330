@@ -130,7 +130,6 @@ void CParamConfig7::StopAllTimer()
 {
 	EnterCriticalSection(&m_TimeLock);
 	KillTimer( SYSTEM_TIME_TIMER );		// 销毁系统时间定时器
-
 	LeaveCriticalSection(&m_TimeLock);
 
 	DeleteCriticalSection(&m_TimeLock); // 删除定时器临界区
@@ -140,20 +139,20 @@ HBRUSH CParamConfig7::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
 	HBRUSH hbr = CDialog::OnCtlColor(pDC, pWnd, nCtlColor);
 
-	// TODO:  在此更改 DC 的任何属性
 	switch( pWnd->GetDlgCtrlID() )
 	{
 		case IDC_EDIT_7_5:
-			 pDC->SetTextColor( m_ResColor );
+			 pDC->SetTextColor( m_ResColor7_5 );
 			 break;
 		case IDC_EDIT_7_2:
-			 pDC->SetTextColor( m_ResColor );
+			 pDC->SetTextColor( m_ResColor7_2 );
+			 break;
+		case IDC_EDIT_7_7:
+			 pDC->SetTextColor( m_ResColor7_7 );
 			 break;
 		default:
 			 break;
 	}
-
-	// TODO:  如果默认的不是所需画笔，则返回另一个画笔
 	return hbr;
 }
 
@@ -503,10 +502,14 @@ void CParamConfig7::OnBnClickedCheck_7_22()
 		{
 			( ( CButton* )GetDlgItem( IDC_CHECK_7_27 ) )->SetCheck( FALSE );
 		}
+		pSubDlg4->m_ComboBox_WorkList.EnableWindow( FALSE );
+		pSubDlg4->m_DateTime.EnableWindow( FALSE );
 	}
 	else
 	{
 		pRadioButtonTY->SetCheck( FALSE );
+		pSubDlg4->m_ComboBox_WorkList.EnableWindow( TRUE );
+		pSubDlg4->m_DateTime.EnableWindow( TRUE );
 	}
 }
 // 选2M版本,与通用版本互斥
@@ -521,11 +524,15 @@ void CParamConfig7::OnBnClickedCheck_7_23()
 		if( TRUE == ( ( CButton* )GetDlgItem( IDC_CHECK_7_26 ) )->GetCheck( ) )
 		{
 			( ( CButton* )GetDlgItem( IDC_CHECK_7_26 ) )->SetCheck( FALSE );
+			pSubDlg4->m_ComboBox_WorkList.EnableWindow( TRUE );
+			pSubDlg4->m_DateTime.EnableWindow( TRUE );
 		}
 	}
 	else
 	{
 		pRadioButton2M->SetCheck( FALSE );
+		pSubDlg4->m_ComboBox_WorkList.EnableWindow( FALSE );
+		pSubDlg4->m_DateTime.EnableWindow( FALSE );
 	}
 }
 
@@ -667,7 +674,7 @@ UINT CParamConfig7::GetSystimeAndPasswordThread(LPVOID pParam)
 		{
 			TRACE("Receive overtime!\n");
 			ResultEdit->SetWindowText(" 1-NG !");
-			pSubDlg7->m_ResColor = cRED;
+			pSubDlg7->m_ResColor7_5 = cRED;
 			return FALSE;
 		}
 		int RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
@@ -676,7 +683,7 @@ UINT CParamConfig7::GetSystimeAndPasswordThread(LPVOID pParam)
 		if(FALSE == ComProto.GetPureData(0x07, RecvBuffer, RecvBufLen))
 		{
 			ResultEdit->SetWindowText(" 1-NG !");
-			pSubDlg7->m_ResColor = cRED;
+			pSubDlg7->m_ResColor7_5 = cRED;
 			return FALSE;
 		}
 		CString BASS330Time;
@@ -707,7 +714,7 @@ UINT CParamConfig7::GetSystimeAndPasswordThread(LPVOID pParam)
 		{
 			TRACE("Receive overtime!\n");
 			ResultEdit->SetWindowText(" 1-NG !");
-			pSubDlg7->m_ResColor = cRED;
+			pSubDlg7->m_ResColor7_5 = cRED;
 			return FALSE;
 		}
 
@@ -717,7 +724,7 @@ UINT CParamConfig7::GetSystimeAndPasswordThread(LPVOID pParam)
 		if(FALSE == ComProto.GetPureData(0x1D, RecvBuffer, RecvBufLen))
 		{
 			ResultEdit->SetWindowText(" 2-NG !");
-			pSubDlg7->m_ResColor = cRED;
+			pSubDlg7->m_ResColor7_5 = cRED;
 			return FALSE;
 		}
 		CString SuperPassword;
@@ -725,7 +732,7 @@ UINT CParamConfig7::GetSystimeAndPasswordThread(LPVOID pParam)
 		( ( CEdit* )( pSubDlg7->GetDlgItem( IDC_EDIT_7_4 ) ) )->SetWindowText(SuperPassword);
     }
 	ResultEdit->SetWindowText("  OK !");
-	pSubDlg7->m_ResColor = cGREEN;
+	pSubDlg7->m_ResColor7_5 = cGREEN;
 
 	return TRUE;
 }
@@ -767,7 +774,7 @@ UINT CParamConfig7::TestDoThread(LPVOID pParam)
 		{
 			TRACE("Receive overtime!\n");
 			ResultEdit->SetWindowText(" 1-NG !");
-			pSubDlg7->m_ResColor = cRED;
+			pSubDlg7->m_ResColor7_2 = cRED;
 			return FALSE;
 		}
 		int RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
@@ -776,7 +783,7 @@ UINT CParamConfig7::TestDoThread(LPVOID pParam)
 		if(FALSE == ComProto.GetPureData(0x55, RecvBuffer, RecvBufLen))
 		{
 			ResultEdit->SetWindowText(" 1-NG !");
-			pSubDlg7->m_ResColor = cRED;
+			pSubDlg7->m_ResColor7_2 = cRED;
 			return FALSE;
 		}
 		std::vector<int> AiDiValue(32, 0);
@@ -789,7 +796,7 @@ UINT CParamConfig7::TestDoThread(LPVOID pParam)
 		if(pSubDlg6->AiDiTest(AiDiValue) == false)
 		{
 			ResultEdit->SetWindowText(" 1-NG !");
-			pSubDlg7->m_ResColor = cRED;
+			pSubDlg7->m_ResColor7_2 = cRED;
 			return FALSE;
 		}
     }
@@ -807,7 +814,7 @@ UINT CParamConfig7::TestDoThread(LPVOID pParam)
 		{
 			TRACE("Receive overtime!\n");
 			ResultEdit->SetWindowText(" 2-NG !");
-			pSubDlg7->m_ResColor = cRED;
+			pSubDlg7->m_ResColor7_2 = cRED;
 			return FALSE;
 		}
 		int RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
@@ -816,12 +823,12 @@ UINT CParamConfig7::TestDoThread(LPVOID pParam)
 		if(FALSE == ComProto.isVaildPacket(0x55, RecvBuffer, RecvBufLen))
 		{
 			ResultEdit->SetWindowText(" 2-NG !");
-			pSubDlg7->m_ResColor = cRED;
+			pSubDlg7->m_ResColor7_2 = cRED;
 			return FALSE;
 		}
     }
 	ResultEdit->SetWindowText("  OK !");
-	pSubDlg7->m_ResColor = cGREEN;
+	pSubDlg7->m_ResColor7_2 = cGREEN;
 
 	return TRUE;
 }

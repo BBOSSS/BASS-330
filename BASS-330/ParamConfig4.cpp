@@ -5,6 +5,8 @@
 #include "BASS-330.h"
 #include "ParamConfig4.h"
 #include "BASS-330Dlg.h"
+#include "ProtocolHandle.h"
+#include "ProcessBar.h"
 
 // CParamConfig4 对话框
 
@@ -17,11 +19,18 @@ CParamConfig4::CParamConfig4(CWnd* pParent /*=NULL*/)
 	, m_ChannelSuccessCount(0)
 	, m_ListSuccessCount(0)
 	, m_ListCount(0)
+	, m_pSetItemAttriThread(NULL)
+	, m_ChannelCount(16)
+	, m_processBar(NULL)
+	, m_pSetListThread(NULL)
+	, m_pSetListThread2M(NULL)
 {
 }
 
 CParamConfig4::~CParamConfig4()
 {
+	if(m_processBar != NULL)
+		delete m_processBar;
 }
 
 void CParamConfig4::DoDataExchange(CDataExchange* pDX)
@@ -31,6 +40,8 @@ void CParamConfig4::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_COMBO_PATH_1, m_ComboBox_Channel);
 	DDX_Control(pDX, IDC_COMBO_LIST_1, m_ComboBox_List);
 	DDX_Control(pDX, IDC_LIST_NAME, m_NameList);
+	DDX_Control(pDX, IDC_EXPIRY_DATE1, m_DateTime);
+	DDX_Control(pDX, IDC_COMBO_LIST_2, m_ComboBox_WorkList);
 }
 
 
@@ -66,15 +77,11 @@ BOOL CParamConfig4::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
-	// TODO:  在此添加额外的初始化
-
 	// 初始化子窗口全局指针4
 	pSubDlg4 = this;
 
-	// 选择16通道
-	( ( CButton *)GetDlgItem(IDC_RADIO_16CH ) )->SetCheck( TRUE );	
-	// 选择通用版本
-	( ( CButton *)GetDlgItem(IDC_RADIO_CFG_1) )->SetCheck( TRUE );	
+	((CButton*)(GetDlgItem(IDC_RADIO_16CH)))->SetCheck(TRUE);
+	((CButton*)(GetDlgItem(IDC_RADIO_CFG_1)))->SetCheck(TRUE);
 
 	// 初始化通道列表控件   
 	CRect rect;
@@ -98,11 +105,6 @@ BOOL CParamConfig4::OnInitDialog()
 		m_PathList.InsertItem( i, temp );
 	}
 
-	if(LoadChannelConfig("泉州移动") == false) 
-	{
-		AfxMessageBox("加载通道配置失败！");
-	}
-	
 	// 初始化名单列表控件   
     m_NameList.GetClientRect(&rect);    
     m_NameList.SetExtendedStyle(m_NameList.GetExtendedStyle() | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);   
@@ -110,10 +112,17 @@ BOOL CParamConfig4::OnInitDialog()
     m_NameList.InsertColumn(0, _T("配置名称"),	LVCFMT_CENTER, rect.Width() / 2, 0);   
     m_NameList.InsertColumn(1, _T("卡号"),		LVCFMT_CENTER, rect.Width() / 2, 1); 
 
-	if(LoadListConfig("九江移动") == false) 
-	{
-		AfxMessageBox("加载名单配置失败！");
-	}
+	m_DateTime.SetFormat(_T("yyyy-MM-dd"));		// 设置日期显示格式
+
+	m_ComboBox_WorkList.AddString("第0张表");
+	m_ComboBox_WorkList.AddString("第1张表");
+	m_ComboBox_WorkList.AddString("第2张表");
+	m_ComboBox_WorkList.AddString("第3张表");
+	m_ComboBox_WorkList.AddString("第4张表");
+	m_ComboBox_WorkList.SetCurSel( 0 );
+
+	m_ComboBox_WorkList.EnableWindow( FALSE );
+	m_DateTime.EnableWindow(FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 }
@@ -352,12 +361,16 @@ void CParamConfig4::OnBnClickedRadioTY()
 {
 	( ( CButton* )( pSubDlg7->GetDlgItem( IDC_CHECK_7_26 ) ) )->SetCheck( TRUE );
 	( ( CButton* )( pSubDlg7->GetDlgItem( IDC_CHECK_7_27 ) ) )->SetCheck( FALSE );
+	m_ComboBox_WorkList.EnableWindow( FALSE );
+	m_DateTime.EnableWindow(FALSE);
 }
 // 选择配置2M版本
 void CParamConfig4::OnBnClickedRadio2M()
 {
 	( ( CButton* )( pSubDlg7->GetDlgItem( IDC_CHECK_7_27 ) ) )->SetCheck( TRUE );
 	( ( CButton* )( pSubDlg7->GetDlgItem( IDC_CHECK_7_26 ) ) )->SetCheck( FALSE );
+	m_ComboBox_WorkList.EnableWindow( TRUE );
+	m_DateTime.EnableWindow(TRUE);
 }
 
 // 判断是否存在 
@@ -595,31 +608,118 @@ void CParamConfig4::OnCbnSelchangeComboPath()
 // 通道配置按钮
 void CParamConfig4::OnBnClickedButtonPathConfig()
 {
-	// TODO: 在此添加控件通知处理程序代码
 	if( !pMainDlg->m_bIsOpenSerl )
 	{
 		MessageBox("请先打开串口！", "提示", MB_ICONWARNING);
 		return;
 	}
-	if( m_PathList.GetItemText(3, 1) == "" )
+	if( m_PathList.GetItemText(0, 1).IsEmpty() )
 	{
 		MessageBox("请导出通道配置文件！", "提示", MB_ICONWARNING);
 		return;
 	}
-	if( /*是否已连接数据库*/ TRUE )
+	int CHECK_16CH = ( ( CButton* )( pSubDlg4->GetDlgItem( IDC_RADIO_16CH ) ) )->GetCheck( );
+	int CHECK_32CH = ( ( CButton* )( pSubDlg4->GetDlgItem( IDC_RADIO_32CH ) ) )->GetCheck( );
+	if( FALSE ==  CHECK_16CH && FALSE == CHECK_32CH )
 	{
-		if( /*!(IfExistsPathConfig(ComboBox1->Text))*/ FALSE)
-		{
-			MessageBox("指定的通道配置文件不存在！", "提示", MB_ICONWARNING);
-			return;
-		}
+		AfxMessageBox("请先选择配置通道数！");
+		return;
 	}
 	if(IDCANCEL == MessageBox("加载新的通道信息，原有的通道信息将清除，确认吗？", "提示", MB_OKCANCEL | MB_ICONQUESTION))
         return;
 
-	/*通道配置处理*/
 	( ( CButton* )( GetDlgItem( IDC_BUTTON_PATH_6 ) ) )->EnableWindow( FALSE );
-	/*StartPathConfig()*/ //开一个线程开始通道配置
+
+	if( TRUE == CHECK_16CH )		m_ChannelCount = 16;
+	else if( TRUE == CHECK_32CH )	m_ChannelCount = 32;
+
+	if(m_pSetItemAttriThread)
+    {
+        ::TerminateThread(m_pSetItemAttriThread->m_hThread, 0);
+        m_pSetItemAttriThread = NULL;
+    }
+	m_pSetItemAttriThread = AfxBeginThread(SetItemAttriThread, this);
+
+	 if (NULL == m_processBar)   
+    {    
+        m_processBar = new CProcessBar();   
+        m_processBar->Create(IDD_DIALOG_BAR, this);  
+    }
+	m_processBar->m_Bar.SetRange(0, m_ChannelCount);
+	m_processBar->m_maxRange = m_ChannelCount;
+    m_processBar->ShowWindow(SW_SHOW); 
+}
+
+// 设置通道属性线程
+UINT CParamConfig4::SetItemAttriThread(LPVOID pParam)
+{
+	unsigned int ChannelCnt = pSubDlg4->m_ChannelCount;
+	CButton* pButton = ( CButton* )( pSubDlg4->GetDlgItem( IDC_BUTTON_PATH_6 ));
+
+	for(unsigned int i = 0; i < ChannelCnt; i++)
+	{
+		ItemAttri itemvalue;
+		itemvalue.No = ToInt( pSubDlg4->m_PathList.GetItemText(i, 0) );	// 通道号
+		CString typeStr = pSubDlg4->m_PathList.GetItemText(i, 1);
+		itemvalue.Type = ToInt( typeStr.Left(2) );						// 类型号
+
+		if(typeStr == "08-火情" || typeStr == "09-烟雾" || typeStr == "10-盗情" || typeStr == "11-水浸" || \
+		   typeStr == "12-门禁" || typeStr == "13-油机" || typeStr == "14-空调" || typeStr == "15-红外" || \
+		   typeStr == "16-整流" || typeStr == "17-数字" || typeStr == "18-防盗" || typeStr == "19-机器" || \
+		   typeStr == "20-断电" || typeStr == "21-振动" || typeStr == "22-风门" || typeStr == "22-进风" || \
+		   typeStr == "23-出风" || typeStr == "23-屏蔽" || typeStr == "24-电缆" || typeStr == "24-锁开" || \
+		   typeStr == "25-锁关" || typeStr == "25-微波" || typeStr == "26-隔离" || typeStr == "26-锁舌" || \
+		   typeStr == "27-地线" || typeStr == "28-馈线" || typeStr == "29-漫反射" || typeStr == "18-其他" )
+		{     
+			CString upStr = pSubDlg4->m_PathList.GetItemText(i, 2);
+			itemvalue.Uplimit = ToInt( upStr.Left(2) );								// 上限
+			itemvalue.Dnout	  = ToInt( pSubDlg4->m_PathList.GetItemText(i, 6) );	// 下限输出
+		}
+		else
+		{
+			CString upStr = pSubDlg4->m_PathList.GetItemText(i, 2);
+			itemvalue.Uplimit = ToInt( upStr );										// 上限
+			itemvalue.Dnout	  = ToInt( pSubDlg4->m_PathList.GetItemText(i, 7) );	// 下限输出
+		}
+		itemvalue.Dnlimit = ToInt( pSubDlg4->m_PathList.GetItemText(i, 3) );		// 下限
+        itemvalue.Tol	  =	ToInt( pSubDlg4->m_PathList.GetItemText(i, 4) );		// 公差
+        itemvalue.Adj	  = ToInt( pSubDlg4->m_PathList.GetItemText(i, 5) );		// 调校
+        itemvalue.Upout	  = ToInt( pSubDlg4->m_PathList.GetItemText(i, 6) );		// 上限输出
+
+		CProtocolHandle ComProto;
+		BYTE RecvBuffer[PACKET_SIZE] = {0};
+		BYTE SendData[PACKET_SIZE]   = {0};
+
+		ComProto.PacketItemAttriData(itemvalue, SendData);
+		int length = ComProto.Package(0x11, SendData, 20);
+		pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
+
+		WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
+		if(pMainDlg->m_bRecvPacketTail == false)						// 检查标志位 超过3秒没收到包尾
+		{
+			TRACE("Receive overtime!\n");
+			pButton->EnableWindow( TRUE );
+			AfxMessageBox("设置通道属性失败！");
+			return FALSE;
+		}
+		int RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
+		RingBufferRead(RecvBuffer, RecvBufLen, &(pMainDlg->m_RecvBuf));
+
+		if(FALSE == ComProto.isVaildPacket(0x11, RecvBuffer, RecvBufLen))
+		{
+			TRACE("Not vaild packet!\n");
+			pButton->EnableWindow( TRUE );
+			AfxMessageBox("设置通道属性失败！");
+			return FALSE;
+		}
+		pSubDlg4->m_processBar->UpdateBar(i+1);
+		pSubDlg4->m_ChannelSuccessCount++;
+		pSubDlg4->SetDlgItemText(IDC_EDIT_PATH_1, ToString(pSubDlg4->m_ChannelSuccessCount));
+	}
+	Sleep(300);
+	pButton->EnableWindow( TRUE );
+	pSubDlg4->MessageBox("设置通道属性成功！", "提示", MB_ICONINFORMATION);
+	return TRUE;
 }
 
 // 从数据库加载配置名单
@@ -829,8 +929,132 @@ void CParamConfig4::OnCbnSelchangeComboList()
 	pSubDlg7->m_ComboBox_List.SetWindowText(TempStr);
 }
 
-// 开始名单配置
+// 开始名单配置按钮
 void CParamConfig4::OnBnClickedButtonListConfig()
 {
-	// TODO: 在此添加控件通知处理程序代码
+	if( !pMainDlg->m_bIsOpenSerl )
+	{
+		MessageBox("请先打开串口！", "提示", MB_ICONWARNING);
+		return;
+	}
+	if( m_NameList.GetItemText(0, 1).IsEmpty() )
+	{
+		MessageBox("请导出名单配置文件！", "提示", MB_ICONWARNING);
+		return;
+	}
+	int CHECK_TY = ( ( CButton* )( pSubDlg4->GetDlgItem( IDC_RADIO_CFG_1 ) ) )->GetCheck( );
+	int CHECK_2M = ( ( CButton* )( pSubDlg4->GetDlgItem( IDC_RADIO_CFG_2 ) ) )->GetCheck( );
+	if( FALSE ==  CHECK_TY && FALSE == CHECK_2M )
+	{
+		AfxMessageBox("请先选择名单配置版本！");
+		return;
+	}
+	if(IDCANCEL == MessageBox("加载新的卡信息，原有的卡数据将清除，确认吗？", "提示", MB_OKCANCEL | MB_ICONQUESTION))
+        return;
+
+	( ( CButton* )( GetDlgItem( IDC_BUTTON_LIST_7 ) ) )->EnableWindow( FALSE );
+
+	if( CHECK_TY == TRUE)			// 开启通用版本名单配置线程
+	{
+		if(m_pSetListThread)
+		{
+			::TerminateThread(m_pSetListThread->m_hThread, 0);
+			m_pSetListThread = NULL;
+		}
+		m_pSetListThread = AfxBeginThread(SetListThread, this);
+	}
+	else if( CHECK_2M == TRUE)		// 开启2M版本名单配置线程
+	{
+		if(m_pSetListThread2M)
+		{
+			::TerminateThread(m_pSetListThread2M->m_hThread, 0);
+			m_pSetListThread2M = NULL;
+		}
+		m_pSetListThread2M = AfxBeginThread(SetListThread2M, this);
+	}
+	if (NULL == m_processBar)   
+    {    
+        m_processBar = new CProcessBar();   
+        m_processBar->Create(IDD_DIALOG_BAR, this);  
+    }
+	// 配置进度条显示
+	m_processBar->m_Bar.SetRange(0, m_ListCount);
+	m_processBar->m_maxRange = m_ListCount;
+    m_processBar->ShowWindow(SW_SHOW); 
+}
+
+// 开始通用名单配置线程
+UINT CParamConfig4::SetListThread(LPVOID pParam)
+{
+	CButton* pButton = ( CButton* )( pSubDlg4->GetDlgItem( IDC_BUTTON_LIST_7 ));
+	// 先清除名单
+	CProtocolHandle ComProto;
+	BYTE RecvBuffer[PACKET_SIZE] = {0};
+	BYTE SendData[PACKET_SIZE]   = {0};
+	int length = ComProto.Package(0x38, NULL, 0);
+	pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
+	WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
+	if(pMainDlg->m_bRecvPacketTail == false)						// 检查标志位 超过3秒没收到包尾
+	{
+		pButton->EnableWindow( TRUE );
+		AfxMessageBox("配置名单失败！");
+		return FALSE;
+	}
+	int RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
+	RingBufferRead(RecvBuffer, RecvBufLen, &(pMainDlg->m_RecvBuf));
+	if(FALSE == ComProto.isVaildPacket(0x38, RecvBuffer, RecvBufLen))
+	{
+		pButton->EnableWindow( TRUE );
+		AfxMessageBox("配置名单失败！");
+		return FALSE;
+	}
+
+	// 再设置名单
+	unsigned int cnt = pSubDlg4->m_ListCount;
+	for(unsigned int i = 0; i < cnt; i++)
+	{
+		ComProto.Clear();
+		memset(RecvBuffer, 0, PACKET_SIZE);
+		memset(SendData,   0, PACKET_SIZE);
+
+		CString CardnoStr = pSubDlg4->m_NameList.GetItemText(i, 1);
+		// 注意这里的下标是倒序
+		SendData[3] = ((AscToHex(CardnoStr[0]) << 4) + AscToHex(CardnoStr[1]));
+		SendData[2] = ((AscToHex(CardnoStr[2]) << 4) + AscToHex(CardnoStr[3]));
+		SendData[1] = ((AscToHex(CardnoStr[4]) << 4) + AscToHex(CardnoStr[5]));
+		SendData[0] = ((AscToHex(CardnoStr[6]) << 4) + AscToHex(CardnoStr[7]));
+		TRACE("%02X %02X %02X %02X\n", SendData[3], SendData[2], SendData[1], SendData[0]);
+
+		int length = ComProto.Package(0x36, SendData, 4);
+		pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
+		WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
+		if(pMainDlg->m_bRecvPacketTail == false)						// 检查标志位 超过3秒没收到包尾
+		{
+			pButton->EnableWindow( TRUE );
+			AfxMessageBox("配置名单失败！");
+			return FALSE;
+		}
+		RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
+		RingBufferRead(RecvBuffer, RecvBufLen, &(pMainDlg->m_RecvBuf));
+		if(FALSE == ComProto.isVaildPacket(0x36, RecvBuffer, RecvBufLen))
+		{
+			pButton->EnableWindow( TRUE );
+			AfxMessageBox("配置名单失败！");
+			return FALSE;
+		}
+		pSubDlg4->m_processBar->UpdateBar(i+1);
+		pSubDlg4->m_ListSuccessCount++;
+		pSubDlg4->SetDlgItemText(IDC_EDIT_LIST_3, ToString(pSubDlg4->m_ListSuccessCount));
+	}
+	Sleep(300);
+	pButton->EnableWindow( TRUE );
+	pSubDlg4->MessageBox("配置名单成功！", "提示", MB_ICONINFORMATION);
+	return TRUE;
+}
+
+// 开始2M名单配置线程
+UINT CParamConfig4::SetListThread2M(LPVOID pParam)
+{
+
+	return TRUE;
 }
