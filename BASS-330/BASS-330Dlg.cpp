@@ -53,9 +53,11 @@ CBASS330Dlg::CBASS330Dlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CBASS330Dlg::IDD, pParent)
 	, m_bIsOpenSerl(0)
 	, m_bRecvPacketTail(false)
+	, is2MPacket(false)
 	, m_pDeviceInitThread(NULL)
 	, m_pClearRecordThread(NULL)
 	, m_pClearListThread(NULL)
+	, m_pClearList2MThread(NULL)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDI_TOOL_ICON);
 }
@@ -311,8 +313,7 @@ LONG CBASS330Dlg::FSerialRecv(WPARAM ch, LPARAM port)
 	int nReadLen;
 	BYTE RecvChar = ch;
 	CString CH;
-	CH.Format("%02X", ch);
-	CH += " ";
+	CH.Format("%02X", ch); CH += " ";
 	int len = m_EdSerlRecv.GetWindowTextLength();
 	m_EdSerlRecv.SetSel(len, len);		//将插入光标放在最后
 	m_EdSerlRecv.ReplaceSel(CH);
@@ -331,12 +332,15 @@ LONG CBASS330Dlg::FSerialRecv(WPARAM ch, LPARAM port)
 	{
 		TRACE("RingBufferWrite Error!\n");
 	}
-
-	if(RecvChar == 0xFE) // 包尾标志
+	if(is2MPacket == false && RecvChar == 0xFE) // 通用版本包尾标志0xFE
 	{
 		m_bRecvPacketTail = true;
 		ReleaseSemaphore(m_hSemaphore, 1, NULL);
-		TRACE("Get Packet Tail, Release Semaphore \r\n");
+	}
+	if(is2MPacket == true && RecvChar == 0x0D)	// 2M版本包尾标志0x0D
+	{
+		m_bRecvPacketTail = true;
+		ReleaseSemaphore(m_hSemaphore, 1, NULL);
 	}
 
 	return 0;
@@ -559,6 +563,7 @@ UINT CBASS330Dlg::DeviceInitThread(LPVOID pParam)
 	CProtocolHandle ComProto;
 	BYTE RecvBuffer[PACKET_SIZE] = {0};
 	int length = ComProto.Package(0x02, NULL, 0);
+	pMainDlg->is2MPacket = false;
 	pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 
 	WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
@@ -602,6 +607,7 @@ UINT CBASS330Dlg::ClearRecordThread(LPVOID pParam)
 	CProtocolHandle ComProto;
 	BYTE RecvBuffer[PACKET_SIZE] = {0};
 	int length = ComProto.Package(0x35, NULL, 0);
+	pMainDlg->is2MPacket = false;
 	pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 
 	WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
@@ -646,6 +652,7 @@ UINT CBASS330Dlg::ClearListThread(LPVOID pParam)
 	CProtocolHandle ComProto;
 	BYTE RecvBuffer[PACKET_SIZE] = {0};
 	int length = ComProto.Package(0x38, NULL, 0);
+	pMainDlg->is2MPacket = false;
 	pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 
 	WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
@@ -669,6 +676,46 @@ UINT CBASS330Dlg::ClearListThread(LPVOID pParam)
 
 void CBASS330Dlg::OnBnClickedButtonClearList2M()
 {
-	// TODO: 在此添加控件通知处理程序代码
-	MessageBox("TODO: 2M版本功能尚未实现", "提示", MB_ICONINFORMATION);
+	if( !m_bIsOpenSerl )
+	{
+		MessageBox("请先打开串口!", "提示", MB_ICONWARNING);
+		return;
+	}
+	if(IDCANCEL == MessageBox("将清除2M黑白名单，确认吗？", "提示", MB_OKCANCEL | MB_ICONQUESTION))
+        return;
+	if(m_pClearList2MThread)
+    {
+        ::TerminateThread(m_pClearList2MThread->m_hThread, 0);
+        m_pClearList2MThread = NULL;
+    }
+	m_pClearList2MThread = AfxBeginThread(ClearList2MThread, this);
+}
+
+UINT CBASS330Dlg::ClearList2MThread(LPVOID pParam)
+{
+	BYTE SendData[8] = {0xF1, 0xE4, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00};
+	BYTE RecvBuffer[PACKET_SIZE] = {0};
+	BYTE Packet[PACKET_SIZE] = {0};
+	CProtocolHandle ComProto;
+	int length = ComProto.Package2M(0x21, 0x01, 0x80, 0x49, SendData, 8, Packet);
+	pMainDlg->is2MPacket = true;
+	pMainDlg->FSerialSend(Packet, length);							// 发送数据
+
+	WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
+	if(pMainDlg->m_bRecvPacketTail == false)						// 检查标志位 超过3秒没收到包尾
+	{
+		TRACE("Receive overtime!\n");
+		AfxMessageBox("清除2M黑白名单失败！");
+		return FALSE;
+	}
+	int RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
+	RingBufferRead(RecvBuffer, RecvBufLen, &(pMainDlg->m_RecvBuf));
+
+	if(false == ComProto.isVaildAck2M(RecvBuffer, RecvBufLen))
+	{
+		AfxMessageBox("清除2M黑白名单失败！");
+		return FALSE;
+	}
+	pMainDlg->MessageBox("清除2M黑白名单成功！", "提示", MB_ICONINFORMATION);
+	return TRUE;
 }

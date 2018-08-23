@@ -197,7 +197,7 @@ BOOL CParamConfig3::OnInitDialog()
 	m15_series2Checkbit.AddString(_T("03 - 1校验"));
 	m15_series2Checkbit.AddString(_T("04 - 0校验"));
 
-	if(LoadParamConfig("BASS330CPU测试") == false) 
+	if(LoadParamConfig(PARAM_INIT) == false) 
 	{
 		AfxMessageBox("加载参数配置失败！");
 	}

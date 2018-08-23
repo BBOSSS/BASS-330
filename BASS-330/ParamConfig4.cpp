@@ -80,8 +80,8 @@ BOOL CParamConfig4::OnInitDialog()
 	// 初始化子窗口全局指针4
 	pSubDlg4 = this;
 
-	((CButton*)(GetDlgItem(IDC_RADIO_16CH)))->SetCheck(TRUE);
-	((CButton*)(GetDlgItem(IDC_RADIO_CFG_1)))->SetCheck(TRUE);
+	// ((CButton*)(GetDlgItem(IDC_RADIO_16CH)))->SetCheck(TRUE);
+	// ((CButton*)(GetDlgItem(IDC_RADIO_CFG_1)))->SetCheck(TRUE);
 
 	// 初始化通道列表控件   
 	CRect rect;
@@ -692,6 +692,7 @@ UINT CParamConfig4::SetItemAttriThread(LPVOID pParam)
 
 		ComProto.PacketItemAttriData(itemvalue, SendData);
 		int length = ComProto.Package(0x11, SendData, 20);
+		pMainDlg->is2MPacket = false;
 		pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 
 		WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
@@ -992,6 +993,7 @@ UINT CParamConfig4::SetListThread(LPVOID pParam)
 	BYTE RecvBuffer[PACKET_SIZE] = {0};
 	BYTE SendData[PACKET_SIZE]   = {0};
 	int length = ComProto.Package(0x38, NULL, 0);
+	pMainDlg->is2MPacket = false;
 	pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 	WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
 	if(pMainDlg->m_bRecvPacketTail == false)						// 检查标志位 超过3秒没收到包尾
@@ -1026,6 +1028,7 @@ UINT CParamConfig4::SetListThread(LPVOID pParam)
 		TRACE("%02X %02X %02X %02X\n", SendData[3], SendData[2], SendData[1], SendData[0]);
 
 		int length = ComProto.Package(0x36, SendData, 4);
+		pMainDlg->is2MPacket = false;
 		pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 		WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
 		if(pMainDlg->m_bRecvPacketTail == false)						// 检查标志位 超过3秒没收到包尾
@@ -1055,6 +1058,84 @@ UINT CParamConfig4::SetListThread(LPVOID pParam)
 // 开始2M名单配置线程
 UINT CParamConfig4::SetListThread2M(LPVOID pParam)
 {
+	CButton* pButton = ( CButton* )( pSubDlg4->GetDlgItem( IDC_BUTTON_LIST_7 ));
+	// 先清除名单
+	BYTE SendData[PACKET_SIZE] = {0xF1, 0xE4, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00};
+	BYTE RecvBuffer[PACKET_SIZE] = {0};
+	BYTE Packet[PACKET_SIZE] = {0};
+	CProtocolHandle ComProto;
+	int length = ComProto.Package2M(0x21, 0x01, 0x80, 0x49, SendData, 8, Packet);
+	pMainDlg->is2MPacket = true;
+	pMainDlg->FSerialSend(Packet, length);							// 发送数据
 
+	WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
+	if(pMainDlg->m_bRecvPacketTail == false)						// 检查标志位 超过3秒没收到包尾
+	{
+		pButton->EnableWindow( TRUE );
+		AfxMessageBox("2M黑白名单设置失败！");
+		return FALSE;
+	}
+	int RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
+	RingBufferRead(RecvBuffer, RecvBufLen, &(pMainDlg->m_RecvBuf));
+	if(false == ComProto.isVaildAck2M(RecvBuffer, RecvBufLen))
+	{
+		pButton->EnableWindow( TRUE );
+		AfxMessageBox("2M黑白名单设置失败！");
+		return FALSE;
+	}
+	// 再设置名单
+	unsigned int cnt = pSubDlg4->m_ListCount;
+	CString DateStr;   pSubDlg4->m_DateTime.GetWindowText(DateStr);
+	unsigned int sel = pSubDlg4->m_ComboBox_WorkList.GetCurSel();
+	for(unsigned int i = 0; i < cnt; i++)
+	{
+		ComProto.Clear();
+		memset(RecvBuffer, 0, PACKET_SIZE);
+		memset(SendData,   0, PACKET_SIZE);
+		memset(Packet,     0, PACKET_SIZE);
+
+		CString CardnoStr = pSubDlg4->m_NameList.GetItemText(i, 1);
+
+		SendData[0] = 0xF1;  SendData[1] = 0xE3;  SendData[2] = 0x00; 
+		SendData[3] = ((AscToHex(CardnoStr[0]) << 4) + AscToHex(CardnoStr[1]));
+		SendData[4] = ((AscToHex(CardnoStr[2]) << 4) + AscToHex(CardnoStr[3]));
+		SendData[5] = ((AscToHex(CardnoStr[4]) << 4) + AscToHex(CardnoStr[5]));
+		SendData[6] = ((AscToHex(CardnoStr[6]) << 4) + AscToHex(CardnoStr[7]));
+		SendData[7] = 0x00;  SendData[8] = 0x00;  SendData[9] = 0x00; 
+		SendData[10] = 0x01;  SendData[11] = 0x12;  SendData[12] = 0x34; 
+		SendData[13] = ((AscToHex(DateStr[0]) << 4) + AscToHex(DateStr[1]));
+		SendData[14] = ((AscToHex(DateStr[2]) << 4) + AscToHex(DateStr[3]));
+		SendData[15] = ((AscToHex(DateStr[6]) << 4) + AscToHex(DateStr[7]));
+		SendData[16] = ((AscToHex(DateStr[9]) << 4) + AscToHex(DateStr[10]));
+		if(sel == 0)	 SendData[17] = 0x00;
+		else if(sel == 1)SendData[17] = 0x01;
+		else if(sel == 2)SendData[17] = 0x02;
+		else if(sel == 3)SendData[17] = 0x03;
+		else if(sel == 4)SendData[17] = 0x04;
+
+		int length = ComProto.Package2M(0x21, 0x01, 0x80, 0x49, SendData, 18, Packet);
+		pMainDlg->FSerialSend(Packet, length);	
+		WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
+		if(pMainDlg->m_bRecvPacketTail == false)						// 检查标志位 超过3秒没收到包尾
+		{
+			pButton->EnableWindow( TRUE );
+			AfxMessageBox("2M黑白名单设置失败！");
+			return FALSE;
+		}
+		int RecvBufLen = RingBufferLen(&(pMainDlg->m_RecvBuf));
+		RingBufferRead(RecvBuffer, RecvBufLen, &(pMainDlg->m_RecvBuf));
+		if(false == ComProto.isVaildAck2M(RecvBuffer, RecvBufLen))
+		{
+			pButton->EnableWindow( TRUE );
+			AfxMessageBox("2M黑白名单设置失败！");
+			return FALSE;
+		}
+		pSubDlg4->m_processBar->UpdateBar(i+1);
+		pSubDlg4->m_ListSuccessCount++;
+		pSubDlg4->SetDlgItemText(IDC_EDIT_LIST_3, ToString(pSubDlg4->m_ListSuccessCount));
+	}
+	Sleep(300);
+	pButton->EnableWindow( TRUE );
+	pSubDlg4->MessageBox("配置名单成功！", "提示", MB_ICONINFORMATION);
 	return TRUE;
 }

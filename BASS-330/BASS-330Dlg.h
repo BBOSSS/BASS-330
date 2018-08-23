@@ -65,7 +65,9 @@ public:
 
 	RingBuffer m_RecvBuf;			// 串口接收缓冲区
 	HANDLE	m_hSemaphore;			// 串口数据包同步信号量
-	int m_bRecvPacketTail;
+
+	bool m_bRecvPacketTail;			// 包尾标志
+	bool is2MPacket;				// 版本类型
 
 	CSerialPort m_CSerl;			// CSerialPort类
 	BOOL m_bIsOpenSerl;				// 串口打开标识
@@ -88,6 +90,9 @@ public:
 
 	CWinThread *m_pClearListThread;		// 清除黑白名单线程
 	static UINT ClearListThread(LPVOID pParam);
+
+	CWinThread *m_pClearList2MThread;		// 清除2M版本黑白名单线程
+	static UINT ClearList2MThread(LPVOID pParam);
 
 	afx_msg void OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult);	// 切换标签页时处理函数
 	afx_msg void OnStnClickedStaticDebug();								// 串口调试窗口的收缩

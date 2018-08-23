@@ -18,6 +18,7 @@ CParamConfig7::CParamConfig7(CWnd* pParent /*=NULL*/)
 	, m_pGetSystimeAndPasswordThread(NULL)
 	, m_pTestDoThread(NULL)
 	, m_ParamSuccessCount(0)
+	, m_pSetAllThread(NULL)
 {
 
 }
@@ -74,6 +75,7 @@ BEGIN_MESSAGE_MAP(CParamConfig7, CDialog)
 	ON_CBN_SELCHANGE(IDC_COMBO_7_3, &CParamConfig7::OnCbnSelchangeComboList)
 	ON_BN_CLICKED(IDC_BUTTON_7_3, &CParamConfig7::OnBnClickedButtonListExport)
 	ON_BN_CLICKED(IDC_BUTTON_7_6, &CParamConfig7::OnBnClickedButtonParamResetCnt)
+	ON_BN_CLICKED(IDC_BUTTON_7_7, &CParamConfig7::OnBnClickedButtonSetAll)
 END_MESSAGE_MAP()
 
 
@@ -88,7 +90,7 @@ BOOL CParamConfig7::OnInitDialog()
 	// 初始化子窗口全局指针7
 	pSubDlg7 = this;
 
-	LoadParamConfig("BASS330CPU测试");
+	LoadParamConfig(PARAM_INIT);
 
 	// 初始化定时器锁 临界区
 	InitializeCriticalSection(&m_TimeLock);
@@ -450,6 +452,7 @@ void CParamConfig7::OnBnClickedCheck_7_18()
 void CParamConfig7::OnBnClickedCheck_7_19()
 {
 	// TODO: 在此添加控件通知处理程序代码
+
 }
 // 选择16通道,与32通道互斥
 void CParamConfig7::OnBnClickedCheck_7_20()
@@ -667,6 +670,7 @@ UINT CParamConfig7::GetSystimeAndPasswordThread(LPVOID pParam)
 		BYTE RecvBuffer[PACKET_SIZE] = {0};
 
 		int length = ComProto.Package(0x07, NULL, 0);
+		pMainDlg->is2MPacket = false;
 		pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 
 		WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
@@ -707,6 +711,7 @@ UINT CParamConfig7::GetSystimeAndPasswordThread(LPVOID pParam)
 		BYTE RecvBuffer[PACKET_SIZE] = {0};
 
 		int length = ComProto.Package(0x1D, NULL, 0);
+		pMainDlg->is2MPacket = false;
 		pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 		
 		WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
@@ -767,6 +772,7 @@ UINT CParamConfig7::TestDoThread(LPVOID pParam)
 		BYTE RecvBuffer[PACKET_SIZE] = {0};
 		BYTE SendData = 0x00;
 		int length = ComProto.Package(0x55, &SendData, 1);
+		pMainDlg->is2MPacket = false;
 		pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 
 		WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
@@ -807,6 +813,7 @@ UINT CParamConfig7::TestDoThread(LPVOID pParam)
 		BYTE RecvBuffer[PACKET_SIZE] = {0};
 		BYTE SendData = 0x01;
 		int length = ComProto.Package(0x55, &SendData, 1);
+		pMainDlg->is2MPacket = false;
 		pMainDlg->FSerialSend(ComProto.SendPacket, ComProto.SendLen);	// 发送数据
 
 		WaitForSingleObject(pMainDlg->m_hSemaphore, 3000);				// 等待串口接收完成一帧数据
@@ -946,7 +953,7 @@ bool CParamConfig7::LoadParamConfig(std::string pzmc)
 	string strsql = "SELECT Check_7_1, Check_7_2, Check_7_3, Check_7_4, Check_7_5, Check_7_6, Check_7_7, ";
 	strsql += "Check_7_8, Check_7_9, Check_7_10, Check_7_11, Check_7_12, Check_7_13, Check_7_14, Check_7_15, ";
 	strsql += "Check_7_16, Check_7_17, Check_7_18, Check_7_19, Check_7_20, Check_7_21, Check_7_22, Check_7_23, ";
-	strsql += "Radio_7_3, Radio_7_4, Radio_7_5, Radio_7_6, Radio_7_7 ";
+	strsql += "Radio_7_3, Radio_7_4, Radio_7_5, Radio_7_6, Radio_7_7, Radio_16CH, Radio_32CH, Radio_TY, Radio_2M ";
 	strsql += "FROM paramconfig WHERE PZMC = '" + pzmc + "'";
 
 	if(uMySQL.Select(strsql, data) == false)
@@ -984,6 +991,11 @@ bool CParamConfig7::LoadParamConfig(std::string pzmc)
 	((CButton*)GetDlgItem(IDC_RADIO_7_5))->SetCheck(stoi(data[0][25]));
 	((CButton*)GetDlgItem(IDC_RADIO_7_6))->SetCheck(stoi(data[0][26]));
 	((CButton*)GetDlgItem(IDC_RADIO_7_7))->SetCheck(stoi(data[0][27]));
+
+	((CButton*)(pSubDlg4->GetDlgItem(IDC_RADIO_16CH)))->SetCheck(stoi(data[0][28]));
+	((CButton*)(pSubDlg4->GetDlgItem(IDC_RADIO_32CH)))->SetCheck(stoi(data[0][29]));
+	((CButton*)(pSubDlg4->GetDlgItem(IDC_RADIO_CFG_1)))->SetCheck(stoi(data[0][30]));
+	((CButton*)(pSubDlg4->GetDlgItem(IDC_RADIO_CFG_2)))->SetCheck(stoi(data[0][31]));
 
 	uMySQL.Close();
 	return true;
@@ -1045,4 +1057,32 @@ void CParamConfig7::OnBnClickedButtonParamResetCnt()
 {
 	m_ParamSuccessCount = 0;
 	SetDlgItemText(IDC_EDIT_7_6, ToString(m_ParamSuccessCount));
+}
+
+// 开始配置所有参数
+void CParamConfig7::OnBnClickedButtonSetAll()
+{
+	if( !pMainDlg->m_bIsOpenSerl )
+	{
+		MessageBox("请先打开串口！", "提示", MB_ICONWARNING);
+		return;
+	}
+	if(IDCANCEL == MessageBox("确认配置所有参数吗？", "提示", MB_OKCANCEL | MB_ICONQUESTION))
+        return;
+
+	if(m_pSetAllThread)
+    {
+        ::TerminateThread(m_pSetAllThread->m_hThread, 0);
+        m_pSetAllThread = NULL;
+    }
+	m_pSetAllThread = AfxBeginThread(SetAllThread, this);
+}
+
+UINT CParamConfig7::SetAllThread(LPVOID pParam)
+{
+	if(((CButton*)(pSubDlg7->GetDlgItem(IDC_CHECK_7_1)))->GetCheck() == TRUE)
+	{
+		
+	}
+	return TRUE;
 }

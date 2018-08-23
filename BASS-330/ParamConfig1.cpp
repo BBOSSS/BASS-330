@@ -300,7 +300,7 @@ BOOL CParamConfig1::OnInitDialog()
 	m8_boundSIM.AddString(_T("00 - 否"));
 	m8_boundSIM.AddString(_T("01 - 是"));
 
-	if(LoadParamConfig("BASS330CPU测试") == false) 
+	if(LoadParamConfig(PARAM_INIT) == false) 
 	{
 		AfxMessageBox("加载参数配置失败！");
 	}
@@ -404,7 +404,9 @@ bool CParamConfig1::LoadParamConfig(std::string pzmc)
 
 	if(uMySQL.Select(strsql, data) == false)
 		return false;
-	
+	//std::vector<std::string>::iterator  it = data[0].begin();
+	//AllParams[0].assign(it, it+7);
+	//TRACE("%s \n", AllParams[0][0].c_str());
 	CString TempStr;
 	// 机器参数
 	TempStr = data[0][0].c_str();
@@ -551,7 +553,7 @@ bool CParamConfig1::LoadParamConfig(std::string pzmc)
 	SetDlgItemText(IDC_EDIT7_5, TempStr);
 	TempStr = data[0][68].c_str();
 	SetDlgItemText(IDC_EDIT7_6, TempStr);
-	SetDlgItemText(IDC_EDIT7_7, "0");
+	SetDlgItemText(IDC_EDIT7_7, "0");	//
 	GetDlgItem(IDC_EDIT7_7)->EnableWindow(FALSE);
 	TempStr = data[0][69].c_str();
 	SetDlgItemText(IDC_COMBO7_4, TempStr);

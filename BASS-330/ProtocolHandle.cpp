@@ -233,3 +233,96 @@ void CProtocolHandle::Clear()
 	ConvLen = 0;
 	PureLen = 0;
 }
+
+UINT16 CProtocolHandle::GetVfy2M(BYTE* nData, int nDataLen)
+{
+	UINT16 wVfy = 0x00;
+	for(int i = 1; i <= nDataLen; i++)
+	{
+		wVfy += nData[i];
+	}
+    wVfy = ~wVfy;
+    wVfy = wVfy + 1;
+    return wVfy;
+}
+
+UINT16 CProtocolHandle::GetCodeLen(int iLen)	// 长度及长度校验
+{
+	BYTE byLCHK = ((iLen&0xF00) >> 8) + ((iLen&0x0F0) >> 4) + (iLen&0x00F);
+    byLCHK &= 0x0F;
+    byLCHK =  ~byLCHK;
+    byLCHK &= 0x0F;
+    byLCHK++;
+    WORD wLen = byLCHK;
+    wLen = (wLen << 12) + iLen;
+    return wLen;
+}
+
+int CProtocolHandle::Package2M(BYTE Ver, BYTE Addr, BYTE CID1, BYTE CID2, BYTE* SendData, int nDataLen, BYTE* Packet)
+{
+	BYTE chASCIIH, chASCIIL;
+
+	// 起始位SOI
+	Packet[0] = 0x7E;
+
+	// 版本号VER
+    HexToAscii(Ver, chASCIIH, chASCIIL);
+    Packet[1] = chASCIIH;
+    Packet[2] = chASCIIL;
+
+	// 地址码ADR
+    HexToAscii(Addr, chASCIIH, chASCIIL);
+    Packet[3] = chASCIIH;
+    Packet[4] = chASCIIL;
+
+	// 标识码CID1
+    HexToAscii(CID1, chASCIIH, chASCIIL);
+    Packet[5] = chASCIIH;
+    Packet[6] = chASCIIL;
+
+	// 标识码CID2
+    HexToAscii(CID2, chASCIIH, chASCIIL);
+    Packet[7] = chASCIIH;
+    Packet[8] = chASCIIL;
+
+	// 长度LENGTH
+    UINT16 wLen = GetCodeLen(nDataLen*2);
+    HexToAscii(*((BYTE*)(&wLen)+1), chASCIIH, chASCIIL);
+    Packet[9]  = chASCIIH;
+    Packet[10] = chASCIIL;
+    HexToAscii(*((BYTE*)(&wLen)), chASCIIH, chASCIIL);
+	Packet[11]  = chASCIIH;
+    Packet[12] = chASCIIL;
+
+	// 数据
+	int j = 13;
+    for(int i = 0; i < nDataLen; i++)
+	{
+		HexToAscii(SendData[i], chASCIIH, chASCIIL);
+		Packet[j++] = chASCIIH;
+		Packet[j++] = chASCIIL;
+	}
+
+	// 校验
+    WORD wVfy = GetVfy2M(Packet, j-1);
+    HexToAscii(*((BYTE*)(&wVfy)+1), chASCIIH, chASCIIL);
+    Packet[j++] = chASCIIH;
+    Packet[j++] = chASCIIL;
+    HexToAscii(*((BYTE*)(&wVfy)), chASCIIH, chASCIIL);
+    Packet[j++] = chASCIIH;
+    Packet[j++] = chASCIIL;
+
+	// 包尾
+	Packet[j++] = 0x0D;
+	return j;
+}
+
+// 判断2M版本响应包是否有效
+bool CProtocolHandle::isVaildAck2M(BYTE* RecvBuff, int BufLen)
+{
+	if(RecvBuff[0] != 0x7E || RecvBuff[BufLen-1] != 0x0D)
+		return false;
+	if(RecvBuff[7] != 0x30 || RecvBuff[8] != 0x30)	// RTN BYTE:00H -- ASCII:0x30 0x30
+		return false;
+	return true;
+}

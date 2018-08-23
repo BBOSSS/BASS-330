@@ -66,6 +66,9 @@ public:
 	CWinThread *m_pTestDoThread;				// AIDI采集,光耦和继电器测试线程
 	static UINT TestDoThread(LPVOID pParam);
 
+	CWinThread *m_pSetAllThread;				// 设置所有参数线程
+	static UINT SetAllThread(LPVOID pParam);
+
 	unsigned int m_ParamSuccessCount;			// 参数配置成功次数
 
 	afx_msg void OnBnClickedCheck_7_1( );
@@ -104,4 +107,5 @@ public:
 	afx_msg void OnCbnSelchangeComboList();
 	afx_msg void OnBnClickedButtonListExport();
 	afx_msg void OnBnClickedButtonParamResetCnt();
+	afx_msg void OnBnClickedButtonSetAll();
 };

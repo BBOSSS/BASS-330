@@ -108,7 +108,7 @@ BOOL CParamConfig2::OnInitDialog()
 	m11_optocoupler6.AddString(_T("00+00+00+00+00+00+00+00"));
 	m11_optocoupler6.AddString(_T("01+02+03+04+00+00+00+00"));
 
-	if(LoadParamConfig("BASS330CPU≤‚ ‘") == false) 
+	if(LoadParamConfig(PARAM_INIT) == false) 
 	{
 		AfxMessageBox("º”‘ÿ≤Œ ˝≈‰÷√ ß∞‹£°");
 	}

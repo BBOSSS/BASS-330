@@ -1,17 +1,3 @@
-/*********************************************************
- ** 文件名：全局变量源文件 GlobalVariables.c
- ** Copyright (c) 2018 高新兴科技集团物联产品部
- ** 创建人：xieruibin
- ** 日  期：2018/08/02
- ** 描  述：用于不同子窗口之间相互通信
- ** 版  本：V1.0
- 
- ** 修改人：xxx
- ** 日  期：
- ** 描  述：
- ** 版  本：
-*********************************************************/
-
 #include "stdafx.h"
 #include "GlobalVariables.h"
 
@@ -24,5 +10,5 @@ CParamConfig5 *	pSubDlg5;		// 标签子窗口指针5
 CParamConfig6 *	pSubDlg6;		// 标签子窗口指针6
 CParamConfig7 *	pSubDlg7;		// 标签子窗口指针7
 
-
+vector<vector<string>> AllParams(19, vector<string>(25)); 
 

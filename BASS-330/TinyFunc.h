@@ -36,7 +36,4 @@ CString  hexToStrNoBlank(unsigned char *tpHexData, int len);
 
 void HexToAscii(BYTE &byAt, BYTE &chAsciiH, BYTE &chAsciiL);
 
-//Template<typename T>
-//T GetAbs(T num);
-
 #endif 

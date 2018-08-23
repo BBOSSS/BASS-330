@@ -36,20 +36,17 @@ public:
 	int PureLen;					// 接收数据包中的数据部分的长度
 
 	int Package(BYTE Cmd, BYTE* SendData, int nDataLen);
-
-	void Convert(BYTE* Packet, int &Length);		// 转换数据包中非头尾的 FF FE FD
-
-	int UnConvert(BYTE* Packet, int Length);		// 从接收数据包还原非头尾的 FF FE FD
-
-	BYTE GetVfy(BYTE* nData, int nDataLen);			// 模2加获取数据包的校验位
-													
+	void Convert(BYTE* Packet, int &Length);						// 转换数据包中非头尾的 FF FE FD
+	int UnConvert(BYTE* Packet, int Length);						// 从接收数据包还原非头尾的 FF FE FD
+	BYTE GetVfy(BYTE* nData, int nDataLen);							// 模2加获取数据包的校验位												
 	bool isVaildPacket(BYTE Cmd, BYTE* RecvBuffer, int RecvBufLen);	// 判断数据包是否有效
-
 	int GetPacket(BYTE* RecvBuffer, int RecvBufLen);				// 从接收缓冲区获取数据包 因为可能缓冲区还有数据包之外的脏数据
-
 	int GetPureData(BYTE Cmd, BYTE* RecvBuffer, int RecvBufLen);	// 获取应答包的纯数据
-
 	void PacketItemAttriData(ItemAttri ItemValue, BYTE* SendData);	// 打包通道属性的数据
+	void Clear();					// 成员变量全置为0
 
-	void Clear();	// 成员变量全置为0
+	UINT16 GetVfy2M(BYTE* nData, int nDataLen);
+	UINT16 GetCodeLen(int iLen);
+	int Package2M(BYTE Ver, BYTE Addr, BYTE CID1, BYTE CID2, BYTE* SendData, int nDataLen, BYTE* Packet);
+	bool isVaildAck2M(BYTE* RecvBuff, int BufLen);
 };
